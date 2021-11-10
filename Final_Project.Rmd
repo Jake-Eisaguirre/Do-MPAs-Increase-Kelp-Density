@@ -1,0 +1,48 @@
+---
+title: "Untitled"
+author: "Jake Eisaguirre"
+date: "11/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here)
+library(tidyverse)
+library(patchwork)
+```
+
+#read in and clean data
+```{r}
+
+raw_data <- read_csv(here("MLPA_swath_site_means.csv"))
+
+
+initial_fig_data <- raw_data %>% 
+  filter(campus == "UCSB") %>% 
+  select(c("survey_year", "site", "lat_wgs84", "lon_wgs84", "mpa_status", "den_STRPURAD", "den_MESFRAAD")) %>% 
+  group_by(survey_year, mpa_status) %>% 
+  mutate(mean_purp = mean(den_STRPURAD),
+            mean_red = mean(den_MESFRAAD)) %>% 
+  ungroup()
+
+```
+
+```{r}
+
+a <- ggplot(data = initial_fig_data) +
+  geom_line(aes(x = survey_year, y = mean_purp, color = mpa_status)) +
+  theme_classic() +
+  xlab("Year")+
+  ylab("Mean Purple Urchins")
+
+b <- ggplot(data = initial_fig_data) +
+  geom_line(aes(x = survey_year, y = mean_red, color = mpa_status)) +
+  theme_classic()+
+  xlab("Year")+
+  ylab("Mean Red Urchins")
+
+a/b
+
+```
+
