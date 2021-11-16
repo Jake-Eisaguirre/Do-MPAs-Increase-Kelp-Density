@@ -55,4 +55,13 @@ c <- ggplot(data = initial_fig_data) +
 a/b/c
 
 ```
+```{r}
 
+m <- lm(den_STRPURAD ~ mpa_status, data = initial_fig_data)
+summary(m)
+
+k <- lm(den_MACSTIPES ~ den_STRPURAD + mpa_status + den_STRPURAD:mpa_status, 
+        data = initial_fig_data)
+summary(k)
+
+```
