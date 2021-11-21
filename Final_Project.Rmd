@@ -10,6 +10,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(here)
 library(tidyverse)
 library(patchwork)
+library(broom)
+library(dynlm)
+library(dyn)
 ```
 
 #read in and clean data
@@ -18,43 +21,45 @@ library(patchwork)
 raw_data <- read_csv(here("MLPA_swath_site_means.csv"))
 
 
-initial_fig_data <- raw_data %>% 
+annual_mean <- raw_data %>% 
+  separate(col = site, into = c('island', 'site'), sep = '_') %>% 
+  filter(island %in% c("ANACAPA", "SCI", "SRI", "SMI")) %>% 
   filter(campus == "UCSB") %>% 
-  select(c("survey_year", "site", "latitude", "longitude", "site_status", 
+  select(c("survey_year", "site", "island", "latitude", "longitude", "site_status", 
            "den_STRPURAD", "den_MESFRAAD", "den_MACPYRAD", "den_MACSTIPES")) %>% 
   group_by(survey_year, site_status) %>% 
   mutate(mean_purp = mean(den_STRPURAD),
             mean_red = mean(den_MESFRAAD),
          mean_stipe = mean(den_MACSTIPES),
          mean_mac = mean(den_MACPYRAD)) %>% 
-  ungroup() %>% 
-  separate(col = site, into = c('island', 'site'), sep = '_') %>% 
-  filter(island %in% c("ANACAPA", "SCI", "SRI", "SMI"))
+  ungroup()
+  
+  
 
 ```
 
 ```{r}
 
-a <- ggplot(data = initial_fig_data) +
+a <- ggplot(data = annual_mean) +
   geom_line(aes(x = survey_year, y = mean_purp, color = site_status)) +
   theme_classic() +
   xlab("Year")+
   ylab("Mean Purple Urchins")
 
-b <- ggplot(data = initial_fig_data) +
+b <- ggplot(data = annual_mean) +
   geom_line(aes(x = survey_year, y = mean_red, color = site_status)) +
   theme_classic()+
   xlab("Year")+
   ylab("Mean Red Urchins")
 
-c <- ggplot(data = initial_fig_data) +
+c <- ggplot(data = annual_mean) +
   geom_line(aes(x = survey_year, y = mean_stipe, color = site_status)) +
   theme_classic()+
   xlab("Year")+
   ylab("Mean Kelp")
 
 
-a/b/c
+a/c
 
 
 
@@ -62,11 +67,78 @@ a/b/c
 
 ```{r}
 
-m <- lm(den_STRPURAD ~ mpa_status, data = initial_fig_data)
-summary(m)
 
-k <- lm(den_MACSTIPES ~ den_STRPURAD + mpa_status + island + den_STRPURAD:mpa_status + den_STRPURAD:island, 
-        data = initial_fig_data)
+k <- lm(den_MACSTIPES ~ den_STRPURAD + site_status + site_status:den_STRPURAD, 
+        data = annual_mean)
 summary(k)
 
+aug <- augment(k)
+
+annual_mean %>% 
+  ggplot(aes(x = den_STRPURAD, y = den_MACSTIPES, color = site_status)) +
+  geom_point(alpha = 0.5, aes(color =site_status)) +
+  geom_smooth(method = "lm", se = F, lwd = 1.2)
+
+
+
+
+
+
 ```
+
+```{r}
+#null: no difference of kelp and urchins across reference sites and mpas
+#alternative: there is a difference
+
+kelp <-t.test(den_MACSTIPES ~ site_status, data = annual_mean)
+kelp
+
+urch <- t.test(den_STRPURAD ~ site_status , data = annual_mean)
+urch
+
+
+
+```
+```{r}
+
+
+time_lag <- annual_mean %>% 
+  filter(site_status == "mpa",
+         survey_year >2002) %>% 
+  ts()
+
+
+dfm1 <- dynlm(den_STRPURAD ~ L(den_STRPURAD, 1:18), data = time_lag)
+
+df_1 <- cbind(dfm1$coefficients[2:18]) %>% 
+  as.data.frame() %>% 
+  rename(lag_coefficient = V1) %>% 
+  add_column(t_mpa= 1:17)
+  
+
+
+ggplot(df_1) +
+  geom_line(aes(y = lag_coefficient, x = t_mpa)) +
+  theme_classic()
+
+  
+
+```
+
+```{r}
+dfm1 <- dynlm(den_MACSTIPES ~ L(den_MACSTIPES, 1:18), data = time_lag)
+
+df_2 <- cbind(dfm1$coefficients[2:18]) %>% 
+  as.data.frame() %>% 
+  rename(lag_coefficient = V1) %>% 
+  add_column(t_mpa= 1:17)
+  
+
+ggplot(df_2) +
+  geom_line(aes(y = lag_coefficient, x = t_mpa)) +
+  theme_classic()
+
+
+
+```
+
