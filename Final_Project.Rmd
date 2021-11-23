@@ -13,6 +13,10 @@ library(patchwork)
 library(broom)
 library(dynlm)
 library(dyn)
+library(modelr)
+library(car)
+library(ggpubr)
+library(rstatix)
 ```
 
 #read in and clean data
@@ -72,15 +76,43 @@ k <- lm(den_MACSTIPES ~ den_STRPURAD + site_status + site_status:den_STRPURAD,
         data = annual_mean)
 summary(k)
 
-aug <- augment(k)
+
 
 annual_mean %>% 
   ggplot(aes(x = den_STRPURAD, y = den_MACSTIPES, color = site_status)) +
   geom_point(alpha = 0.5, aes(color =site_status)) +
-  geom_smooth(method = "lm", se = F, lwd = 1.2)
+  geom_smooth(formula = y ~ x, method = "lm", se = F, lwd = 0.8) +
+  theme_classic() +
+  scale_y_continuous(limits = c(0, 600), expand = c(0.01,0.01)) +
+  scale_x_continuous(limits = c(0, 3000), expand = c(0.01,0.01)) +
+  ylab("Kelp Density") +
+  xlab("Urchin Density") +
+  labs(color = "Site Status")
 
 
 
+
+
+
+
+```
+```{r}
+aug <- annual_mean %>% 
+  add_predictions(k) %>% 
+  mutate(residuals = den_MACSTIPES - pred)
+
+ggplot(data = aug) +
+  geom_histogram(aes(residuals), binwidth = 25) +
+  theme_classic()
+
+qqPlot(aug$residuals) 
+
+mean(aug$residuals)
+
+ggplot(data = aug) +
+  geom_point(aes(y = residuals, x = den_STRPURAD)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  theme_classic()
 
 
 
@@ -90,53 +122,105 @@ annual_mean %>%
 #null: no difference of kelp and urchins across reference sites and mpas
 #alternative: there is a difference
 
-kelp <-t.test(den_MACSTIPES ~ site_status, data = annual_mean)
-kelp
+kelp.test <-t.test(den_MACSTIPES ~ site_status, data = annual_mean)
+kelp.test
+
+kelp_bxp <-ggboxplot(annual_mean, x = "site_status", y = "den_MACSTIPES",
+                     xlab = "Site Status", ylab = "Kelp Density", 
+                     title = "T Test, t(763.74) = 2.5502, p < 0.05 (p = 0.011), n = 864",
+                     bxp.errorbar = T,
+                     alpha = 0.3, 
+                     color = c("blue", "red"))
+
+
+
 
 urch <- t.test(den_STRPURAD ~ site_status , data = annual_mean)
 urch
 
+urch_bxp <-ggboxplot(annual_mean, x = "site_status", y = "den_STRPURAD",
+                     xlab = "Site Status", ylab = "Urchin Density", 
+                     title = "T Test, t(822) = -2.2465, p < 0.05 (p = 0.0249), n = 864",
+                     bxp.errorbar = T,
+                     alpha = 0.3, 
+                     color = c("blue", "red"))
+
 
 
 ```
 ```{r}
 
 
-time_lag <- annual_mean %>% 
+time_lag_mpa <- annual_mean %>% 
   filter(site_status == "mpa",
          survey_year >2002) %>% 
   ts()
 
+time_lag_ref <- annual_mean %>% 
+  filter(site_status == "reference",
+         survey_year >2002) %>% 
+  ts()
 
-dfm1 <- dynlm(den_STRPURAD ~ L(den_STRPURAD, 1:18), data = time_lag)
 
-df_1 <- cbind(dfm1$coefficients[2:18]) %>% 
+dfm1_mpa <- dynlm(den_STRPURAD ~ L(den_STRPURAD, 1:18), data = time_lag_mpa)
+
+dfm1_ref <- dynlm(den_STRPURAD ~ L(den_STRPURAD, 1:18), data = time_lag_ref)
+
+
+
+df_1_mpa <- cbind(dfm1_mpa$coefficients[2:18]) %>% 
+  as.data.frame() %>% 
+  rename(lag_coefficient = V1) %>% 
+  add_column(t_mpa= 1:17)
+
+df_1_ref <- cbind(dfm1_ref$coefficients[2:18]) %>% 
+  as.data.frame() %>% 
+  rename(lag_coefficient = V1) %>% 
+  add_column(t_mpa= 1:17)
+
+df_1_sci <- cbind(dfm1_sci$coefficients[2:18]) %>% 
   as.data.frame() %>% 
   rename(lag_coefficient = V1) %>% 
   add_column(t_mpa= 1:17)
   
 
 
-ggplot(df_1) +
-  geom_line(aes(y = lag_coefficient, x = t_mpa)) +
-  theme_classic()
-
+ggplot() +
+  geom_line(aes(y = lag_coefficient, x = t_mpa), data = df_1_mpa, color = "red") +
+  theme_classic() +
+  ylab("Mean Urchin Density Coefficients") +
+  xlab("Time Since MPA Implementation") +
+  geom_line(aes(y = lag_coefficient, x = t_mpa), data = df_1_ref, color = "blue" ) +
+  geom_hline(yintercept = 0, linetype = "dashed")
+  
   
 
 ```
 
 ```{r}
-dfm1 <- dynlm(den_MACSTIPES ~ L(den_MACSTIPES, 1:18), data = time_lag)
+dfm2_mpa <- dynlm(den_MACSTIPES ~ L(den_MACSTIPES, 1:18), data = time_lag_mpa)
 
-df_2 <- cbind(dfm1$coefficients[2:18]) %>% 
+dfm2_ref <- dynlm(den_MACSTIPES ~ L(den_MACSTIPES, 1:18), data = time_lag_ref)
+
+
+df_2_mpa <- cbind(dfm2_mpa$coefficients[2:18]) %>% 
+  as.data.frame() %>% 
+  rename(lag_coefficient = V1) %>% 
+  add_column(t_mpa= 1:17)
+
+df_2_ref <- cbind(dfm2_ref$coefficients[2:18]) %>% 
   as.data.frame() %>% 
   rename(lag_coefficient = V1) %>% 
   add_column(t_mpa= 1:17)
   
 
-ggplot(df_2) +
-  geom_line(aes(y = lag_coefficient, x = t_mpa)) +
-  theme_classic()
+ggplot() +
+  geom_line(aes(y = lag_coefficient, x = t_mpa), data = df_2_mpa, color = "red") +
+  theme_classic() +
+  geom_line(aes(y = lag_coefficient, x = t_mpa), data = df_2_ref, color = "blue") +
+  geom_hline(yintercept = 0, linetype = "dashed")+
+  ylab("Mean Kelp Density Coefficients") +
+  xlab("Time Since MPA Implementation")
 
 
 
