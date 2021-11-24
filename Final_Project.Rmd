@@ -11,108 +11,154 @@ library(here)
 library(tidyverse)
 library(patchwork)
 library(broom)
-library(dynlm)
-library(dyn)
 library(modelr)
 library(car)
 library(ggpubr)
 library(rstatix)
+library(sjPlot)
 ```
 
-#read in and clean data
+\#read in and clean data
+
 ```{r}
 
 raw_data <- read_csv(here("MLPA_swath_site_means.csv"))
 
 
 annual_mean <- raw_data %>% 
+  filter(campus == "UCSB") %>%
   separate(col = site, into = c('island', 'site'), sep = '_') %>% 
   filter(island %in% c("ANACAPA", "SCI", "SRI", "SMI")) %>% 
-  filter(campus == "UCSB") %>% 
-  select(c("survey_year", "site", "island", "latitude", "longitude", "site_status", 
-           "den_STRPURAD", "den_MESFRAAD", "den_MACPYRAD", "den_MACSTIPES")) %>% 
+  select(c("survey_year", "site", "island", "latitude", 
+           "longitude", "site_status",
+           "den_STRPURAD", "den_MACPYRAD", "den_MACSTIPES")) %>% 
   group_by(survey_year, site_status) %>% 
   mutate(mean_purp = mean(den_STRPURAD),
-            mean_red = mean(den_MESFRAAD),
          mean_stipe = mean(den_MACSTIPES),
          mean_mac = mean(den_MACPYRAD)) %>% 
+  mutate(log_urch = log(den_STRPURAD)) %>% 
+  mutate(log_mac = log(den_MACSTIPES)) %>%
+  mutate(log_plant = log(den_MACPYRAD)) %>% 
+  filter_all(all_vars(!is.infinite(.))) %>% 
   ungroup()
-  
+
+
+
+
   
 
 ```
 
 ```{r}
 
-a <- ggplot(data = annual_mean) +
+urchins <- ggplot(data = annual_mean) +
   geom_line(aes(x = survey_year, y = mean_purp, color = site_status)) +
   theme_classic() +
   xlab("Year")+
-  ylab("Mean Purple Urchins")
-
-b <- ggplot(data = annual_mean) +
-  geom_line(aes(x = survey_year, y = mean_red, color = site_status)) +
-  theme_classic()+
-  xlab("Year")+
-  ylab("Mean Red Urchins")
-
-c <- ggplot(data = annual_mean) +
-  geom_line(aes(x = survey_year, y = mean_stipe, color = site_status)) +
-  theme_classic()+
-  xlab("Year")+
-  ylab("Mean Kelp")
-
-
-a/c
-
-
-
-```
-
-```{r}
-
-
-k <- lm(den_MACSTIPES ~ den_STRPURAD + site_status + site_status:den_STRPURAD, 
-        data = annual_mean)
-summary(k)
-
-
-
-annual_mean %>% 
-  ggplot(aes(x = den_STRPURAD, y = den_MACSTIPES, color = site_status)) +
-  geom_point(alpha = 0.5, aes(color =site_status)) +
-  geom_smooth(formula = y ~ x, method = "lm", se = F, lwd = 0.8) +
-  theme_classic() +
-  scale_y_continuous(limits = c(0, 600), expand = c(0.01,0.01)) +
-  scale_x_continuous(limits = c(0, 3000), expand = c(0.01,0.01)) +
-  ylab("Kelp Density") +
-  xlab("Urchin Density") +
+  ylab(expression("Urchin Density per 60m"^2)) +
   labs(color = "Site Status")
 
 
 
+kelp <- ggplot(data = annual_mean) +
+  geom_line(aes(x = survey_year, y = mean_stipe, color = site_status)) +
+  theme_classic()+
+  xlab("Year")+
+  ylab(expression("Kelp Density per 60m"^2)) +
+  labs(color = "Site Status")
+
+
+combined <- urchins / kelp & theme(legend.position = "right")
+combined + plot_layout(guides = "collect")
 
 
 
 
 ```
+
+```{r}
+
+urch_dist <- ggplot(data = annual_mean) +
+  geom_histogram(aes(den_STRPURAD), binwidth = 70) +
+  theme_classic() +
+  xlab(expression("Urchin Density per 60m"^2))
+
+
+mac_dist <- ggplot(data = annual_mean) +
+  geom_histogram(aes(den_MACSTIPES), binwidth = 15) +
+  theme_classic() +
+  xlab(expression("Kelp Density per 60m"^2))
+
+urch_dist * mac_dist
+
+
+```
+
+```{r}
+log_urch_dist <- ggplot(data = annual_mean) +
+  geom_histogram(aes(log_urch), binwidth = 0.15) +
+  theme_classic() +
+  xlab("log Urchins")
+
+
+log_mac_dist <- ggplot(data = annual_mean) +
+  geom_histogram(aes(log_mac), binwidth = 0.15) +
+  theme_classic() +
+  xlab("log Kelp")
+
+log_urch_dist * log_mac_dist
+
+```
+
+```{r}
+
+
+mod <- lm(log_mac ~ den_STRPURAD + site_status + site_status:den_STRPURAD, 
+        data = annual_mean)
+tab_model(mod)
+
+
+annual_mean %>% 
+  ggplot(aes(x = den_STRPURAD, y = log_mac, color = site_status)) +
+  geom_point(alpha = 0.5, aes(color =site_status)) +
+  geom_smooth(formula = y ~ x, method = "lm", se = T, lwd = 0.8) +
+  theme_classic() +
+  scale_y_continuous(expand = c(0.01,0.01)) +
+  scale_x_continuous(expand = c(0.01,0.01)) +
+  ylab(expression("log Kelp Density per 60m"^2)) +
+  xlab(expression("Urchin Density per 60m"^2)) +
+  labs(color = "Site Status")
+
+
+
+```
+
 ```{r}
 aug <- annual_mean %>% 
   add_predictions(k) %>% 
-  mutate(residuals = den_MACSTIPES - pred)
+  mutate(residuals_mac = log_mac - pred)
+
 
 ggplot(data = aug) +
-  geom_histogram(aes(residuals), binwidth = 25) +
-  theme_classic()
+  geom_histogram(aes(residuals_mac), binwidth = 0.25) +
+  theme_classic() +
+  xlab("Kelp Residuals")
 
-qqPlot(aug$residuals) 
 
-mean(aug$residuals)
+
+qqPlot(aug$residuals_mac) 
+
+
+mean(aug$residuals_mac)
+
+
 
 ggplot(data = aug) +
-  geom_point(aes(y = residuals, x = den_STRPURAD)) +
+  geom_point(aes(y = residuals_mac, x = den_STRPURAD), alpha = 0.3) +
   geom_hline(yintercept = 0, linetype = "dashed") +
-  theme_classic()
+  theme_classic() +
+  xlab(expression("Urchin Density per 60m"^2)) +
+  ylab("Kelp Residuals")
 
 
 
@@ -122,107 +168,91 @@ ggplot(data = aug) +
 #null: no difference of kelp and urchins across reference sites and mpas
 #alternative: there is a difference
 
-kelp.test <-t.test(den_MACSTIPES ~ site_status, data = annual_mean)
-kelp.test
+kelp.test <-t.test(log_mac ~ site_status, data = annual_mean)
+tab_model(kelp.test)
 
-kelp_bxp <-ggboxplot(annual_mean, x = "site_status", y = "den_MACSTIPES",
-                     xlab = "Site Status", ylab = "Kelp Density", 
-                     title = "T Test, t(763.74) = 2.5502, p < 0.05 (p = 0.011), n = 864",
+kelp_bxp <-ggboxplot(annual_mean, x = "site_status", y = "log_mac",
+                     xlab = "Site Status", ylab = expression("log Kelp Density per 60m"^2), 
+                     title = "T Test, t(616.94) = 2.5502, p = 0.7993, n = 658",
                      bxp.errorbar = T,
                      alpha = 0.3, 
                      color = c("blue", "red"))
 
+kelp_bxp
 
 
+urch <- t.test(log_urch ~ site_status , data = annual_mean)
+tab_model(urch)
 
-urch <- t.test(den_STRPURAD ~ site_status , data = annual_mean)
-urch
-
-urch_bxp <-ggboxplot(annual_mean, x = "site_status", y = "den_STRPURAD",
-                     xlab = "Site Status", ylab = "Urchin Density", 
-                     title = "T Test, t(822) = -2.2465, p < 0.05 (p = 0.0249), n = 864",
+urch_bxp <-ggboxplot(annual_mean, x = "site_status", y = "log_urch",
+                     xlab = "Site Status", ylab = expression("log Urchin Density per 60m"^2), 
+                     title = "T Test, t(647.41) = -0.19433, p = 0.846, n = 658",
                      bxp.errorbar = T,
                      alpha = 0.3, 
                      color = c("blue", "red"))
+urch_bxp
+
+
 
 
 
 ```
-```{r}
 
+```{r}
 
 time_lag_mpa <- annual_mean %>% 
   filter(site_status == "mpa",
-         survey_year >2002) %>% 
-  ts()
+         survey_year >2001)%>%
+  group_by(survey_year) %>% 
+  add_column(time_mpa = "")
 
-time_lag_ref <- annual_mean %>% 
-  filter(site_status == "reference",
-         survey_year >2002) %>% 
-  ts()
+time_lag_mpa$time_mpa <- cut(time_lag_mpa$survey_year, 
+                             c(2002:2020), c(1:18))
 
-
-dfm1_mpa <- dynlm(den_STRPURAD ~ L(den_STRPURAD, 1:18), data = time_lag_mpa)
-
-dfm1_ref <- dynlm(den_STRPURAD ~ L(den_STRPURAD, 1:18), data = time_lag_ref)
+time_lag_mpa <- time_lag_mpa %>% 
+   filter(survey_year > 2002) 
 
 
 
-df_1_mpa <- cbind(dfm1_mpa$coefficients[2:18]) %>% 
-  as.data.frame() %>% 
-  rename(lag_coefficient = V1) %>% 
-  add_column(t_mpa= 1:17)
+mpa_mod <- lm(log_mac ~  den_STRPURAD + time_mpa, 
+              data = time_lag_mpa)
+tab_model(mpa_mod, df.method = "kr")
 
-df_1_ref <- cbind(dfm1_ref$coefficients[2:18]) %>% 
-  as.data.frame() %>% 
-  rename(lag_coefficient = V1) %>% 
-  add_column(t_mpa= 1:17)
-
-df_1_sci <- cbind(dfm1_sci$coefficients[2:18]) %>% 
-  as.data.frame() %>% 
-  rename(lag_coefficient = V1) %>% 
-  add_column(t_mpa= 1:17)
-  
-
-
-ggplot() +
-  geom_line(aes(y = lag_coefficient, x = t_mpa), data = df_1_mpa, color = "red") +
-  theme_classic() +
-  ylab("Mean Urchin Density Coefficients") +
-  xlab("Time Since MPA Implementation") +
-  geom_line(aes(y = lag_coefficient, x = t_mpa), data = df_1_ref, color = "blue" ) +
-  geom_hline(yintercept = 0, linetype = "dashed")
-  
-  
-
-```
-
-```{r}
-dfm2_mpa <- dynlm(den_MACSTIPES ~ L(den_MACSTIPES, 1:18), data = time_lag_mpa)
-
-dfm2_ref <- dynlm(den_MACSTIPES ~ L(den_MACSTIPES, 1:18), data = time_lag_ref)
-
-
-df_2_mpa <- cbind(dfm2_mpa$coefficients[2:18]) %>% 
-  as.data.frame() %>% 
-  rename(lag_coefficient = V1) %>% 
-  add_column(t_mpa= 1:17)
-
-df_2_ref <- cbind(dfm2_ref$coefficients[2:18]) %>% 
-  as.data.frame() %>% 
-  rename(lag_coefficient = V1) %>% 
-  add_column(t_mpa= 1:17)
-  
-
-ggplot() +
-  geom_line(aes(y = lag_coefficient, x = t_mpa), data = df_2_mpa, color = "red") +
-  theme_classic() +
-  geom_line(aes(y = lag_coefficient, x = t_mpa), data = df_2_ref, color = "blue") +
-  geom_hline(yintercept = 0, linetype = "dashed")+
-  ylab("Mean Kelp Density Coefficients") +
-  xlab("Time Since MPA Implementation")
 
 
 
 ```
 
+```{r}
+
+urchins <- annual_mean %>% 
+  filter(survey_year > 2002) %>% 
+  ggplot() +
+  geom_line(aes(x = survey_year, y = mean_purp, color = site_status)) +
+  theme_classic() +
+  xlab("Year")+
+  ylab(expression("Urchin Density per 60m"^2)) +
+  labs(color = "Site Status")
+
+
+
+kelp <- annual_mean %>% 
+  filter(survey_year > 2002) %>% 
+  ggplot() +
+  geom_line(aes(x = survey_year, y = mean_stipe, color = site_status)) +
+  theme_classic()+
+  xlab("Year")+
+  ylab(expression("Kelp Density per 60m"^2)) +
+  labs(color = "Site Status") +
+  geom_vline(xintercept = 2017, linetype = "dashed" ) +
+  geom_vline(xintercept = 2013, linetype = "dashed" ) +
+  geom_vline(xintercept = 2010, linetype = "dashed")
+
+
+combined <- urchins / kelp & theme(legend.position = "right")
+combined + plot_layout(guides = "collect")
+
+
+
+
+```
