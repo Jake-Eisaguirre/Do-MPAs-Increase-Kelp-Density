@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Do MPAs Work?!"
 author: "Jake Eisaguirre"
 date: "11/9/2021"
 output: html_document
@@ -18,7 +18,7 @@ library(rstatix)
 library(sjPlot)
 ```
 
-\#read in and clean data
+### read in and clean data
 
 ```{r}
 
@@ -48,7 +48,7 @@ annual_mean <- raw_data %>%
   
 
 ```
-
+### initial data viz
 ```{r}
 
 urchins <- ggplot(data = annual_mean) +
@@ -56,16 +56,23 @@ urchins <- ggplot(data = annual_mean) +
   theme_classic() +
   xlab("Year")+
   ylab(expression("Urchin Density per 60m"^2)) +
-  labs(color = "Site Status")
+  labs(color = "Site Status") +
+  scale_color_manual(values = c("red", "blue")) +
+  labs(title = "Northern Channel Islands") +
+  theme(plot.title = element_text(hjust = 0.5))
+
 
 
 
 kelp <- ggplot(data = annual_mean) +
-  geom_line(aes(x = survey_year, y = mean_stipe, color = site_status)) +
+  geom_line(aes(x = survey_year, y = mean_stipe, color = site_status), show.legend = F) +
   theme_classic()+
   xlab("Year")+
   ylab(expression("Kelp Density per 60m"^2)) +
-  labs(color = "Site Status")
+  labs(color = "Site Status")  +
+  scale_color_manual(values = c("red", "blue"))
+
+  
 
 
 combined <- urchins / kelp & theme(legend.position = "right")
@@ -75,7 +82,7 @@ combined + plot_layout(guides = "collect")
 
 
 ```
-
+### inspect data for normal distribution
 ```{r}
 
 urch_dist <- ggplot(data = annual_mean) +
@@ -93,7 +100,7 @@ urch_dist * mac_dist
 
 
 ```
-
+### log transform to normalize data
 ```{r}
 log_urch_dist <- ggplot(data = annual_mean) +
   geom_histogram(aes(log_urch), binwidth = 0.15) +
@@ -109,13 +116,18 @@ log_mac_dist <- ggplot(data = annual_mean) +
 log_urch_dist * log_mac_dist
 
 ```
-
+### create linear model
 ```{r}
 
 
 mod <- lm(log_mac ~ den_STRPURAD + site_status + site_status:den_STRPURAD, 
         data = annual_mean)
-tab_model(mod)
+
+tab_model(mod,
+          pred.labels = c("Intercept", "Urchin Density", "Site Status", "Urchin Density:Site Status"),
+          dv.labels = c("log Kelp Density"),
+          string.ci = "Conf. Int (95%)",
+          string.p = "P-value")
 
 
 annual_mean %>% 
@@ -127,15 +139,16 @@ annual_mean %>%
   scale_x_continuous(expand = c(0.01,0.01)) +
   ylab(expression("log Kelp Density per 60m"^2)) +
   xlab(expression("Urchin Density per 60m"^2)) +
-  labs(color = "Site Status")
+  labs(color = "Site Status") +
+  scale_color_manual(values = c("red", "blue"))
 
 
 
 ```
-
+### inspect model fit
 ```{r}
 aug <- annual_mean %>% 
-  add_predictions(k) %>% 
+  add_predictions(mod) %>% 
   mutate(residuals_mac = log_mac - pred)
 
 
@@ -163,13 +176,23 @@ ggplot(data = aug) +
 
 
 ```
-
+### conduct t.tests on site status (Should this be one sided?)
 ```{r}
+
 #null: no difference of kelp and urchins across reference sites and mpas
+
 #alternative: there is a difference
 
+
 kelp.test <-t.test(log_mac ~ site_status, data = annual_mean)
-tab_model(kelp.test)
+
+
+tab_model(kelp.test,
+          string.ci = "Conf. Int (95%)",
+          string.p = "P-value",
+          dv.labels = "log Kelp Density",
+          pred.labels = "Site Status")
+
 
 kelp_bxp <-ggboxplot(annual_mean, x = "site_status", y = "log_mac",
                      xlab = "Site Status", ylab = expression("log Kelp Density per 60m"^2), 
@@ -182,7 +205,13 @@ kelp_bxp
 
 
 urch <- t.test(log_urch ~ site_status , data = annual_mean)
-tab_model(urch)
+
+tab_model(urch,
+          string.ci = "Conf. Int (95%)",
+          string.p = "P-value",
+          dv.labels = "log Urchin Density",
+          pred.labels = "Site Status")
+
 
 urch_bxp <-ggboxplot(annual_mean, x = "site_status", y = "log_urch",
                      xlab = "Site Status", ylab = expression("log Urchin Density per 60m"^2), 
@@ -190,6 +219,7 @@ urch_bxp <-ggboxplot(annual_mean, x = "site_status", y = "log_urch",
                      bxp.errorbar = T,
                      alpha = 0.3, 
                      color = c("blue", "red"))
+
 urch_bxp
 
 
@@ -198,6 +228,7 @@ urch_bxp
 
 ```
 
+### create linear model with time incorporated
 ```{r}
 
 time_lag_mpa <- annual_mean %>% 
@@ -216,7 +247,14 @@ time_lag_mpa <- time_lag_mpa %>%
 
 mpa_mod <- lm(log_mac ~  den_STRPURAD + time_mpa, 
               data = time_lag_mpa)
-tab_model(mpa_mod, df.method = "kr")
+
+tab_model(mpa_mod, df.method = "kr",
+          string.ci = "Conf. Int (95%)",
+          string.p = "P-value",
+          pred.labels = c("Intercept", "Urchin Density", "2 Years", "3 Years", "4 Years", "5 Years", "6 Years",
+                          "7 Years", "8 Years", "9 Years", "10 Years", "11 Years", "12 Years", "13 Years", "14 Years",
+                          "15 Years", "16 Years", "17 Years", "18 Years"),
+          dv.labels = c("log Kelp Density"))
 
 
 
@@ -225,32 +263,39 @@ tab_model(mpa_mod, df.method = "kr")
 
 ```{r}
 
-urchins <- annual_mean %>% 
-  filter(survey_year > 2002) %>% 
-  ggplot() +
-  geom_line(aes(x = survey_year, y = mean_purp, color = site_status)) +
+urchins_time <- ggplot(data = time_lag_mpa) +
+  geom_line(aes(x = survey_year, y = mean_purp), color = "purple") +
   theme_classic() +
   xlab("Year")+
   ylab(expression("Urchin Density per 60m"^2)) +
-  labs(color = "Site Status")
+  labs(color = "Site Status")+
+  geom_vline(xintercept = 2010, linetype = "dashed")+
+  geom_vline(xintercept = 2013, linetype = "dashed")+
+  geom_vline(xintercept = 2017, linetype = "dashed")+
+  scale_y_continuous(expand = c(0.01,0.01)) +
+  scale_x_continuous(expand = c(0.01,0.01)) +
+  labs(title = "Time Since Implementation of Marine Protected Areas") +
+  theme(plot.title = element_text(hjust = 0.5))
 
 
 
-kelp <- annual_mean %>% 
-  filter(survey_year > 2002) %>% 
-  ggplot() +
-  geom_line(aes(x = survey_year, y = mean_stipe, color = site_status)) +
+kelp_time <- ggplot(data = time_lag_mpa) +
+  geom_line(aes(x = survey_year, y = mean_stipe), color = "darkgoldenrod") +
   theme_classic()+
   xlab("Year")+
   ylab(expression("Kelp Density per 60m"^2)) +
   labs(color = "Site Status") +
-  geom_vline(xintercept = 2017, linetype = "dashed" ) +
-  geom_vline(xintercept = 2013, linetype = "dashed" ) +
-  geom_vline(xintercept = 2010, linetype = "dashed")
+  geom_vline(xintercept = 2010, linetype = "dashed")+
+  geom_vline(xintercept = 2013, linetype = "dashed")+
+  geom_vline(xintercept = 2017, linetype = "dashed") +
+  scale_alpha_continuous()+
+  scale_y_continuous(expand = c(0.01,0.01)) +
+  scale_x_continuous(expand = c(0.01,0.01))
 
 
-combined <- urchins / kelp & theme(legend.position = "right")
-combined + plot_layout(guides = "collect")
+
+
+urchins_time / kelp_time
 
 
 
