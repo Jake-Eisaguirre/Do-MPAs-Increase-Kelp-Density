@@ -233,29 +233,54 @@ urch_bxp
 
 time_lag_mpa <- annual_mean %>% 
   filter(site_status == "mpa",
-         survey_year >2001)%>%
+         survey_year >2000)%>%
   group_by(survey_year) %>% 
   add_column(time_mpa = "")
 
 time_lag_mpa$time_mpa <- cut(time_lag_mpa$survey_year, 
                              c(2002:2020), c(1:18))
 
-time_lag_mpa <- time_lag_mpa %>% 
-   filter(survey_year > 2002) 
+time_lag_mpa <- time_lag_mpa %>%
+   filter(survey_year > 2002)
 
 
 
-mpa_mod <- lm(log_mac ~  den_STRPURAD + time_mpa, 
+mpa_mod <- lm(log_mac ~ time_mpa, 
               data = time_lag_mpa)
 
 tab_model(mpa_mod, df.method = "kr",
           string.ci = "Conf. Int (95%)",
           string.p = "P-value",
-          pred.labels = c("Intercept", "Urchin Density", "2 Years", "3 Years", "4 Years", "5 Years", "6 Years",
+          pred.labels = c("Intercept", "2 Years", "3 Years", "4 Years", "5 Years", "6 Years",
                           "7 Years", "8 Years", "9 Years", "10 Years", "11 Years", "12 Years", "13 Years", "14 Years",
                           "15 Years", "16 Years", "17 Years", "18 Years"),
-          dv.labels = c("log Kelp Density"))
+          dv.labels = c("MPA: log Kelp Density"))
 
+
+
+
+time_lag_ref <- annual_mean %>% 
+  filter(site_status == "reference",
+         survey_year >2000)%>%
+  group_by(survey_year) %>% 
+  add_column(time_ref = "")
+
+time_lag_ref$time_ref <- cut(time_lag_ref$survey_year, 
+                             c(2002:2020), c(1:18))
+
+time_lag_ref <- time_lag_ref %>%
+   filter(survey_year > 2002)
+
+ref_mod <- lm(log_mac ~ time_ref, 
+              data = time_lag_ref)
+
+tab_model(ref_mod, df.method = "kr",
+          string.ci = "Conf. Int (95%)",
+          string.p = "P-value",
+          pred.labels = c("Intercept", "2 Years", "3 Years", "4 Years", "5 Years", "6 Years",
+                          "7 Years", "8 Years", "9 Years", "10 Years", "12 Years", "13 Years", "14 Years",
+                          "15 Years", "16 Years", "17 Years", "18 Years"),
+          dv.labels = c("Reference Site: log Kelp Density"))
 
 
 
@@ -263,41 +288,56 @@ tab_model(mpa_mod, df.method = "kr",
 
 ```{r}
 
-urchins_time <- ggplot(data = time_lag_mpa) +
-  geom_line(aes(x = survey_year, y = mean_purp), color = "purple") +
-  theme_classic() +
-  xlab("Year")+
-  ylab(expression("Urchin Density per 60m"^2)) +
-  labs(color = "Site Status")+
-  geom_vline(xintercept = 2010, linetype = "dashed")+
-  geom_vline(xintercept = 2013, linetype = "dashed")+
-  geom_vline(xintercept = 2017, linetype = "dashed")+
-  scale_y_continuous(expand = c(0.01,0.01)) +
-  scale_x_continuous(expand = c(0.01,0.01)) +
-  labs(title = "Time Since Implementation of Marine Protected Areas") +
-  theme(plot.title = element_text(hjust = 0.5))
+# urchins_time <- ggplot(data = time_lag_mpa) +
+#   geom_line(aes(x = survey_year, y = mean_purp), color = "purple") +
+#   theme_classic() +
+#   xlab("Year")+
+#   ylab(expression("Urchin Density per 60m"^2)) +
+#   labs(color = "Site Status")+
+#   geom_vline(xintercept = 2010, linetype = "dashed")+
+#   geom_vline(xintercept = 2013, linetype = "dashed")+
+#   geom_vline(xintercept = 2017, linetype = "dashed")+
+#   scale_y_continuous(expand = c(0.01,0.01)) +
+#   scale_x_continuous(expand = c(0.01,0.01)) +
+#   labs(title = "Time Since Implementation of Marine Protected Areas") +
+#   theme(plot.title = element_text(hjust = 0.5))
 
 
 
-kelp_time <- ggplot(data = time_lag_mpa) +
+kelp_time_mpa <- ggplot(data = time_lag_mpa) +
   geom_line(aes(x = survey_year, y = mean_stipe), color = "darkgoldenrod") +
   theme_classic()+
   xlab("Year")+
   ylab(expression("Kelp Density per 60m"^2)) +
   labs(color = "Site Status") +
-  geom_vline(xintercept = 2010, linetype = "dashed")+
-  geom_vline(xintercept = 2013, linetype = "dashed")+
+  geom_vline(xintercept = 2018, linetype = "dashed")+
+  geom_vline(xintercept = 2019, linetype = "dashed")+
   geom_vline(xintercept = 2017, linetype = "dashed") +
+  geom_vline(xintercept = 2020, linetype = "dashed") +
   scale_alpha_continuous()+
   scale_y_continuous(expand = c(0.01,0.01)) +
-  scale_x_continuous(expand = c(0.01,0.01))
+  scale_x_continuous(expand = c(0.01,0.01)) +
+  labs(title = "Time Since Implementation of Marine Protected Areas", subtitle = "MPA") +
+  theme(plot.title = element_text(hjust = 0.5))
 
 
+kelp_time_ref <- ggplot(data = time_lag_ref) +
+  geom_line(aes(x = survey_year, y = mean_stipe), 
+            color = "darkgoldenrod", linetype = "dashed") +
+  theme_classic()+
+  xlab("Year")+
+  ylab(expression("Kelp Density per 60m"^2)) +
+  labs(color = "Site Status") +
+  geom_vline(xintercept = 2017, linetype = "dashed")+
+  geom_vline(xintercept = 2018, linetype = "dashed")+
+  geom_vline(xintercept = 2019, linetype = "dashed") +
+  geom_vline(xintercept = 2016, linetype = "dashed") +
+  geom_vline(xintercept = 2014, linetype = "dashed") +
+  scale_y_continuous(expand = c(0.01,0.01)) +
+  scale_x_continuous(expand = c(0.01,0.01)) +
+  labs(subtitle = "Reference")
 
-
-urchins_time / kelp_time
-
-
+kelp_time_mpa / kelp_time_ref
 
 
 ```
