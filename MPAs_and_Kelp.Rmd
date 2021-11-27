@@ -1,12 +1,12 @@
 ---
-title: "Do MPAs Work?!"
+title: "Do MPAs Increase Kelp Densities?"
 author: "Jake Eisaguirre"
-date: "11/9/2021"
+date: "12/2/2021"
 output: 
   html_document:
     toc: true 
     toc_float: true
-    code_folding: hid
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE, collapse=TRUE}
@@ -90,19 +90,19 @@ ggplot() +
 
 Much work has already been done analyzing the effects of MPA implementation on Kelp Forests. It is well known that many trophic levels change in abundance whether in an MPA or in a fished area. It is also well know that Purple urchins can form "barrens" when densities reach a critical threshold. There is a tipping point where a phase-shift occurs from a macro-algae dominated system to an urchin barren. The reef will become completely devoid of algae and the dominate space holder will be purple urchins.
 
-In this study, I ask the question; Do MPAs increase Kelp densities and what invertebrate species aid or inhibit Kelp densities? I also take a simplistic approach and address the question; At what point do MPAs and reference sites Kelp Densities significantly differ since implementation of the MPAs?
+I began conducting sub-tidal surveys for PISCO in 2017 and have developed these questions based on anecdotal evidence. It was always visually evident of survey location based on kelp and urchin densities. MPAs visually had more kelp and less urchins while reference sites visually had less kelp and more urchins.
+
+In this study I will test my anecdotal questions with PISCO data. I ask the question; Do MPAs increase kelp densities and what invertebrate species aid or inhibit kelp densities? I also take a simplistic approach and address the question; At what point do MPAs and reference sites kelp densities significantly differ since implementation of the MPAs?
 
 ### Methods
 
 In order to answer the desired questions I have obtained PISCO data running from 1999 to 2020. I have chosen to look at Anacapa Island, Santa Cruz Island, Santa Rosa Island, and San Miguel Island as those islands contain the predominant data for PISCO N. Channel Island sites (fig 1).
 
-Data was collected through annual sub-tidal scuba surveys. 12 benthic transects (30 x 2 x 2 m) are surveyed at each site between June and August to quantify densities of invertebrates and macro-algae. Benthic surveys are stratified into three depth zones (approximately 5-, 10-, and 15-m depth). Giant kelp (Macrocystis pyrifera) (kelp) individuals greater than 1-m in height are counted and stipes are enumerated per individual and later summed at the transect level for analysis. Purple urchins (Strongylocentrotus purpuratus) greater than 2.5 cm in diameter are counted.
+Data was collected through annual sub-tidal scuba surveys. 12 benthic transects (30 x 2 x 2 m) are surveyed at each site between June and August to quantify densities of invertebrates and macro-algae. Benthic surveys are stratified into three depth zones (approximately 5-, 10-, and 15-m depth). Giant kelp (Macrocystis pyrifera) (kelp) individuals greater than 1-m in height are counted and stipes are enumerated per individual and later summed at the transect level for analysis. Purple urchins (Strongylocentrotus purpuratus) greater than 2.5 cm in diameter are counted. Sites are either categorized as MPAs or reference sites, each MPA has a paired reference site.
 
 Data was averaged to an annual site mean (n=658, MPA: n=310, Reference: n=348) for purple urchins and kelp stipes (kelp). Understory kelps and red urchins were not included as Giant kelp is the predominant structural species and red urchins are commercially fished.
 
 OLS linear models and whelches two sample t tests ($\alpha$ \< 0.05) were conducted based on previous studies understandings of the detrimental affects purple urchins can have on kelp densities when urchin populations are left unchecked. Response variables were log transformed in order to normalize distribution (see supporting figures). The QQplot is not linear and the residuals show potential heteroscedasticity, take model results with a grain salt (see supporting figures). All other tests of model fit did show potential for acceptable model choice.
-
-##### Read in and Clean data
 
 ```{r}
 
@@ -136,8 +136,6 @@ annual_mean <- raw_data %>%
 ### Results
 
 Through initial data visualization trends can be observed for kelp densities and urchin densities inside MPAs and Reference sites (fig 2). It seems urchin densities between MPAs and Reference Sites fluctuate and follow similar trends until 2014, in which urchin densities inside MPAs show considerably lower densities. A similar trend is observed for kelp densities where densities fluctuate until 2013 and then began to diverge with higher densities inside the MPAs.
-
-##### Initial Data Visualization
 
 ```{r}
 
@@ -175,9 +173,9 @@ combined + plot_layout(guides = "collect")
 
 ```
 
-To determine what might be causing these differences in kelp densities in the MPAs and Reference Sites, a linear model was created ($\alpha$ \< 0.05) (Tbl 1, fig 3). Annual site means for urchin densities, site status (MPA or Reference Site), and site status as an interaction with urchin densities, were all used as predictors for log kelp densities in the linear model. The results clearly illustrate that urchin density is the best predictor for kelp densities (p\<0.001). Interestingly site status is a poor predictor for kelp densities (p=0.845) yet anecdotal observations say otherwise. The urchin density and site status interaction (p=0.095) was not found to be a significant interaction but can still indicate the affects that can occur between the two predictors. A negative trend can clearly be seen between kelp density and urchin densities (fig 3).
+#### Linear Model
 
-##### model
+To determine what might be causing these differences in kelp densities in the MPAs and Reference Sites, a linear model was created ($\alpha$ \< 0.05) (Tbl 1, fig 3). Annual site means for urchin densities, site status (MPA or Reference Site), and site status as an interaction with urchin densities, were all used as predictors for log kelp densities in the linear model. The results clearly illustrate that urchin density is the best predictor for kelp densities (p\<0.001). Interestingly site status is a poor predictor for kelp densities (p=0.845) yet anecdotal observations say otherwise. The urchin density and site status interaction (p=0.095) was not found to be a significant interaction but can still indicate the affects that can occur between the two predictors. A negative trend can clearly be seen between kelp density and urchin densities (fig 3).
 
 ```{r}
 
@@ -211,15 +209,15 @@ annual_mean %>%
 
 ```
 
+#### Welch Two Sample T Test
+
 In order to test my anecdotal evidence of higher densities of kelp and lower densities of urchins in the MPAs and vice versa for reference sites, I have created a set of Welch Two Sample t-tests ($\alpha$ \< 0.05).
 
 The null hypothesis: There is no difference of kelp and urchin densities between MPAs and Reference Sites for the selected data set.
 
 The alternative hypothesis: There is a difference in kelp and urchin densities between MPAs and Reference Sites for the selected data set.
 
-The first t-test concluded that we would fail to reject the null hypothesis as site status as a predictor for kelp density (p=0.675) (fig 3 Tbl 2). The second t-test once again concluded that we would fail to reject the null hypothesis as site status as a predictor for urchin density (p=0.846) (fig 4 Tbl 3). This may not align with current anecdotal evidence and that is understandable as these t-tests include many data points that counter the current anecdotal evidence (fig 2).
-
-##### t-tests
+The first t-test concluded that we would fail to reject the null hypothesis as site status as a predictor for kelp density (p=0.675) (fig 3 Tbl 2). The second t-test once again concluded that we would fail to reject the null hypothesis as site status as a predictor for urchin density (p=0.846) (fig 4 Tbl 3). This may not align with my current anecdotal evidence and that is understandable as these t-tests include many data points that counter the current anecdotal evidence (fig 2).
 
 ```{r}
 
@@ -276,11 +274,11 @@ urch_bxp
 
 ```
 
+#### MPA Implementation Linear Model
+
 In order to test the affects of MPA implementation on kelp densities both in MPAs and Reference sites a linear model was created with time since MPA implementation as a predictor for kelp densities (Tbl 4 & 5). A significant difference ($\alpha$ \< 0.05) in kelp densities since the implementation of the MPAs occurred 15-18 (p=0.019, 0.012, 0.008, 0.01) years after implementation or 2017-2020 (fig 6 Tbl 4).
 
-A similar trend occurred for the reference sites. A significant difference in kelp densities since the implementation of MPAs occured 12, 14-17 (p=0.001, \<0.001, \<0.001, 0.002, \<0.001) years after implementation or 2014, 2016, 2017-2019.
-
-##### linear model with time
+A similar trend occurred for the reference sites. A significant difference in kelp densities since the implementation of MPAs occurred 12, 14-17 (p=0.001, \<0.001, \<0.001, 0.002, \<0.001) years after implementation or 2014, 2016, 2017-2019.
 
 ```{r}
 
@@ -385,7 +383,21 @@ kelp_time_mpa / kelp_time_ref
 
 ### Discussion
 
+Understanding the changes that occur from the implementation of MPAs is important so we can know if they are working and benefiting the ecosystem. Through long term monitoring and analysis we can better understand how they evolve through time and this knowledge can be translated across regions and systems for the implementation of new MPAs or reserves.
+
+From these results we can see changes in kelp densities from the implementation of MPAs are not explicitly evident (fig 2). Kelp forests are highly dynamic ecosystems and the fluctuations caused through environmental changes can lead to challenges in understanding changes through time (fig 2). However from our linear models there does seem to be strong evidence of a negative relationship between urchin densities and kelp densities (fig 3 Tbl 1). This significant result ($\alpha$ \< 0.05) does line up with my own anecdotal evidence of locations with high urchins and low kelp or vice versa. Interestingly, I did not see any evidence for site status to significantlly affect either kelp or urchin densities (fig 3, 4, 5 Tbl 1,2,3). However, based on the long-run trends of urchin and kelp densities this makes sense why the tests I conducted did not pick up a difference (fig 2). There was a long period of time, many data points, where kelp densities did not significantly differ between MPAs and reference sites (fig 6 Tbl 4,5). The time period at which kelp densities began to significantly differ between MPAs and reference sites coincides with my own anecdotal observations beginning in 2017 (fig 6, Tbl 4,5).
+
+Now the real question lies with in, what happened in the year 2013-2014 at the N. Channel Islands that caused such sudden changes in kelp and urchin densities inside MPAs and reference sites (fig 2)? Further research needs to be conducted but I would hypothesis the mass sea star war wasting event affected the kelp forests. The sunflower star (Pycnopodia helianthordes), a keystone species, consumes urchins but was functionally extirpated from the region by 2014 due to sea star wasting disease. A change as abrupt and sudden as the loss of a keystone species can cause shifts in any ecosystem. Especially if a site, IE reference site, is heavily commercially and recreationally fished decreasing the remaining urchin predator guild leading to an explosion of urchins and a dramatic loss of kelp. However if a site is protected, the release of fishing pressure can lead to increased resilience in the system due to the remaining urchin predator guild mediating urchin levels allowing for kelp's to persist.
+
+### Conclusion
+
+Further research needs to be conducted, however this study lends support to the importance of maintaining urchin populations in order for healthy kelp forests to persist. Along with that kelps in marine protected areas could possibly withstand a greater degree of perturbations supporting the already hypothesized theory that MPAs increase ecosystem resilience.
+
+###           
+
 #### Supporting Figures and Results
+
+GitHub Repository: <https://github.com/Jake-Eisaguirre/Final_Project>
 
 ```{r}
 # Not normally distributed
