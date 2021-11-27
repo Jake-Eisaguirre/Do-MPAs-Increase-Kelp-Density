@@ -16,17 +16,82 @@ library(car)
 library(ggpubr)
 library(rstatix)
 library(sjPlot)
+library(sf)
+library(sp)
+library(ggsn)
 ```
 
 ### Introduction
 
 The Northern Channel Islands are situated in the Southern California Bight 22 miles from Santa Barbara California. They are known to be a biodiversity hotpot due to a unique environmental factors driving local ecological processes. In 2003 the state of California, along with NOAA, created 10 Marine protected areas (MPAs) and designated the Channel islands a marine sanctuary. The creation of no-take MPAs allowed for a release of commercial and recreational fishing pressures. Just Prior to the creation of the MPAs, the Partnership for Interdisciplinary Studies of Coastal Oceans (PISCO), began conducting sub-tidal kelp forest surveys inside a suite of MPAs and Reference sites in order to gain a better understanding how the release of fishing pressure might alter ecological interactions.
 
+##### Northern Channel Islands Map
+
+```{r}
+
+cha <- read_sf(here("shape", "channel_islands.shp")) %>% 
+  mutate(geometry = st_transform(geometry, "+proj=longlat +ellps=WGS84 +datum=WGS84")) %>% 
+  filter(!NAME=="San Clemente")
+
+ca <- read_sf(here("s_11au16", "s_11au16.shp")) %>% 
+  mutate(geometry = st_transform(geometry, "+proj=longlat +ellps=WGS84 +datum=WGS84")) %>% 
+  filter(NAME == "California")
+
+MPA <- read_sf(here("ds582", "ds582.shp")) %>%   
+  mutate(geometry = st_transform(geometry, "+proj=longlat +ellps=WGS84 +datum=WGS84")) %>% 
+  filter(OBJECTID %in% c(101:114))
+
+
+
+ggplot() +
+  scale_x_continuous("Longitude", breaks = c(-120.5, -120.25, -120, -119.75, -119.5, -119.25),
+                     expand = c(0,0)) +
+  scale_y_continuous("Latitude", breaks = c(33.25, 33.5, 33.75, 34, 34.25, 34.5),
+                                expand = c(0,0),
+                     position = "left") +
+  geom_sf(data = cha, color = "black", fill = "grey60") +
+  geom_sf(data = ca, color = "black", fill = "grey60") +
+  theme_classic() +
+  geom_sf(data = MPA, color = "red", fill = "red", alpha = 0.3, show.legend = T) +
+  coord_sf(xlim = c(-120.75, -119.0), ylim = c(33.8, 34.75), expand = T) +
+  geom_text(aes(x = -120.4, y = 34.2),  label = "San Miguel" ) +
+  geom_text(aes(x = -120.12, y = 34.1),  label = "Santa Rosa" ) +
+  geom_text(aes(x = -119.72, y = 34.1),  label = "Santa Cruz" ) +
+  geom_text(aes(x = -119.35, y = 34.1),  label = "Anacapa" ) +
+  geom_point(aes(x = -119.84, y = 34.42), shape = 18, size = 3.3) +
+  geom_text(aes(x = -119.84, y = 34.48), label = "Bren Hall") +
+  scalebar(x.min = -120.75, x.max = -119.0, y.min = 33.8, y.max = 34.75,
+           dist = 15, dist_unit = "km", 
+           transform = TRUE, model = "WGS84", st.bottom = F,
+           location = "bottomleft", 
+           anchor = c(x = -120.7, y = 33.8), #add scale bar and set location
+           st.dist = 0.03) +
+  north(x.min = -120.75, x.max = -119.0, y.min = 33.8, y.max = 34.75,
+        scale = 0.15, anchor = c(x = -119.05, y = 34.72) ) +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=1),
+        axis.ticks = element_line(size = 0.5, color = "black")) +
+  scale_colour_manual(name = "Site Status", values = c(MPA = "red")) + 
+  theme(legend.title = element_text(size = 10), 
+        legend.text = element_text(size = 10),
+        legend.position = c(0.1, 0.60)) 
+
+
+  
+
+
+```
+
 Much work has already been done analyzing the effects of MPA implementation on Kelp Forests. It is well known that many trophic levels change in abundance whether in an MPA or in a fished area. In this study, I ask the question; Do MPAs increase Kelp densities and what invertebrate species aid or inhibit Kelp densities? I also take a simplistic approach and attempt to address the question; At what point do MPAs and reference sites Kelp Densities significantly differ?
 
 ### Methods
 
-In order to answer the desired questions I have obtained PISCO data starting in 1999 running to 2020. I have chosen to look at Anacapa Island, Santa Cruz Island, Santa Rosa Island, and San Miguel Island. Data was averaged to an annual site mean (n=658, MPA n=310, Reference n=348). OLS linear models and whelches two sample t tests were conducted based on previous knowledge of species interactions.
+In order to answer the desired questions I have obtained PISCO data running from 1999 to 2020. I have chosen to look at Anacapa Island, Santa Cruz Island, Santa Rosa Island, and San Miguel Island as those islands contain the predominant data for PISCO N. Channel Island sites.
+
+Data was collected through annual sub-tidal scuba surveys. 12 benthic transects (30 x 2 x 2 m) are surveyed at each site between June and August to quantify densities of invertebrates and macro-algae. Benthic surveys are stratified into three depth zones (approximately 5-, 10-, and 15-m depth). Giant kelp (Macrocystis pyrifera) (kelp) individuals greater than 1-m in height are counted and stipes are enumerated per individual and later summed at the transect level for analysis. Purple urchins (Strongylocentrotus purpuratus) greater than 2.5 cm in diameter are counted.
+
+Data was averaged to an annual site mean (n=658, MPA: n=310, Reference: n=348) for purple urchins and kelp stipes (kelp). Understory kelps and red urchins were not included as Giant kelp is the predominant structural species and red urchins are commercially fished.
+
+OLS linear models and whelches two sample t tests ($\alpha$ \< 0.05) were conducted based on previous knowledge of species interactions. Response variables were log transformed in order to normalize distribution.
 
 ##### Read in and Clean data
 
@@ -59,7 +124,7 @@ annual_mean <- raw_data %>%
 
 ```
 
-##### initial data viz
+##### Initial Data Vizualation
 
 ```{r}
 
@@ -95,7 +160,7 @@ combined + plot_layout(guides = "collect")
 
 ```
 
-### inspect data for normal distribution
+##### Inspect Data for Normality
 
 ```{r}
 
@@ -115,7 +180,7 @@ urch_dist * mac_dist
 
 ```
 
-### log transform to normalize data
+##### Log Transform Data
 
 ```{r}
 log_urch_dist <- ggplot(data = annual_mean) +
@@ -133,7 +198,7 @@ log_urch_dist * log_mac_dist
 
 ```
 
-### create linear model
+##### Analyse Data
 
 ```{r}
 
@@ -164,7 +229,7 @@ annual_mean %>%
 
 ```
 
-### inspect model fit
+##### Inspect Model Fit
 
 ```{r}
 aug <- annual_mean %>% 
