@@ -1,0 +1,366 @@
+---
+title: "Do MPAs Work?!"
+author: "Jake Eisaguirre"
+date: "11/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here)
+library(tidyverse)
+library(patchwork)
+library(broom)
+library(modelr)
+library(car)
+library(ggpubr)
+library(rstatix)
+library(sjPlot)
+```
+
+### Introduction
+
+The Northern Channel Islands are situated in the Southern California Bight 22 miles from Santa Barbara California. They are known to be a biodiversity hotpot due to a unique environmental factors driving local ecological processes. In 2003 the state of California, along with NOAA, created 10 Marine protected areas (MPAs) and designated the Channel islands a marine sanctuary. The creation of no-take MPAs allowed for a release of commercial and recreational fishing pressures. Just Prior to the creation of the MPAs, the Partnership for Interdisciplinary Studies of Coastal Oceans (PISCO), began conducting sub-tidal kelp forest surveys inside a suite of MPAs and Reference sites in order to gain a better understanding how the release of fishing pressure might alter ecological interactions.
+
+Much work has already been done analyzing the effects of MPA implementation on Kelp Forests. It is well known that many trophic levels change in abundance whether in an MPA or in a fished area. In this study, I ask the question; Do MPAs increase Kelp densities and what invertebrate species aid or inhibit Kelp densities? I also take a simplistic approach and attempt to address the question; At what point do MPAs and reference sites Kelp Densities significantly differ?
+
+### Methods
+
+In order to answer the desired questions I have obtained PISCO data starting in 1999 running to 2020. I have chosen to look at Anacapa Island, Santa Cruz Island, Santa Rosa Island, and San Miguel Island. Data was averaged to an annual site mean (n=658, MPA n=310, Reference n=348). OLS linear models and whelches two sample t tests were conducted based on previous knowledge of species interactions.
+
+##### Read in and Clean data
+
+```{r}
+
+raw_data <- read_csv(here("MLPA_swath_site_means.csv"))
+
+
+annual_mean <- raw_data %>% 
+  filter(campus == "UCSB") %>%
+  separate(col = site, into = c('island', 'site'), sep = '_') %>% 
+  filter(island %in% c("ANACAPA", "SCI", "SRI", "SMI")) %>% 
+  select(c("survey_year", "site", "island", "latitude", 
+           "longitude", "site_status",
+           "den_STRPURAD", "den_MACPYRAD", "den_MACSTIPES")) %>% 
+  group_by(survey_year, site_status) %>% 
+  mutate(mean_purp = mean(den_STRPURAD),
+         mean_stipe = mean(den_MACSTIPES),
+         mean_mac = mean(den_MACPYRAD)) %>% 
+  mutate(log_urch = log(den_STRPURAD)) %>% 
+  mutate(log_mac = log(den_MACSTIPES)) %>%
+  mutate(log_plant = log(den_MACPYRAD)) %>% 
+  filter_all(all_vars(!is.infinite(.))) %>% 
+  ungroup()
+
+
+
+
+  
+
+```
+
+##### initial data viz
+
+```{r}
+
+urchins <- ggplot(data = annual_mean) +
+  geom_line(aes(x = survey_year, y = mean_purp, color = site_status)) +
+  theme_classic() +
+  xlab("Year")+
+  ylab(expression("Urchin Density per 60m"^2)) +
+  labs(color = "Site Status") +
+  scale_color_manual(values = c("red", "blue")) +
+  labs(title = "Northern Channel Islands") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+
+kelp <- ggplot(data = annual_mean) +
+  geom_line(aes(x = survey_year, y = mean_stipe, color = site_status), show.legend = F) +
+  theme_classic()+
+  xlab("Year")+
+  ylab(expression("Kelp Density per 60m"^2)) +
+  labs(color = "Site Status")  +
+  scale_color_manual(values = c("red", "blue"))
+
+  
+
+
+combined <- urchins / kelp & theme(legend.position = "right")
+combined + plot_layout(guides = "collect")
+
+
+
+
+```
+
+### inspect data for normal distribution
+
+```{r}
+
+urch_dist <- ggplot(data = annual_mean) +
+  geom_histogram(aes(den_STRPURAD), binwidth = 70) +
+  theme_classic() +
+  xlab(expression("Urchin Density per 60m"^2))
+
+
+mac_dist <- ggplot(data = annual_mean) +
+  geom_histogram(aes(den_MACSTIPES), binwidth = 15) +
+  theme_classic() +
+  xlab(expression("Kelp Density per 60m"^2))
+
+urch_dist * mac_dist
+
+
+```
+
+### log transform to normalize data
+
+```{r}
+log_urch_dist <- ggplot(data = annual_mean) +
+  geom_histogram(aes(log_urch), binwidth = 0.15) +
+  theme_classic() +
+  xlab("log Urchins")
+
+
+log_mac_dist <- ggplot(data = annual_mean) +
+  geom_histogram(aes(log_mac), binwidth = 0.15) +
+  theme_classic() +
+  xlab("log Kelp")
+
+log_urch_dist * log_mac_dist
+
+```
+
+### create linear model
+
+```{r}
+
+
+mod <- lm(log_mac ~ den_STRPURAD + site_status + site_status:den_STRPURAD, 
+        data = annual_mean)
+
+tab_model(mod,
+          pred.labels = c("Intercept", "Urchin Density", "Site Status", "Urchin Density:Site Status"),
+          dv.labels = c("log Kelp Density"),
+          string.ci = "Conf. Int (95%)",
+          string.p = "P-value")
+
+
+annual_mean %>% 
+  ggplot(aes(x = den_STRPURAD, y = log_mac, color = site_status)) +
+  geom_point(alpha = 0.5, aes(color =site_status)) +
+  geom_smooth(formula = y ~ x, method = "lm", se = T, lwd = 0.8) +
+  theme_classic() +
+  scale_y_continuous(expand = c(0.01,0.01)) +
+  scale_x_continuous(expand = c(0.01,0.01)) +
+  ylab(expression("log Kelp Density per 60m"^2)) +
+  xlab(expression("Urchin Density per 60m"^2)) +
+  labs(color = "Site Status") +
+  scale_color_manual(values = c("red", "blue"))
+
+
+
+```
+
+### inspect model fit
+
+```{r}
+aug <- annual_mean %>% 
+  add_predictions(mod) %>% 
+  mutate(residuals_mac = log_mac - pred)
+
+
+ggplot(data = aug) +
+  geom_histogram(aes(residuals_mac), binwidth = 0.25) +
+  theme_classic() +
+  xlab("Kelp Residuals")
+
+
+
+qqPlot(aug$residuals_mac) 
+
+
+mean(aug$residuals_mac)
+
+
+
+ggplot(data = aug) +
+  geom_point(aes(y = residuals_mac, x = den_STRPURAD), alpha = 0.3) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  theme_classic() +
+  xlab(expression("Urchin Density per 60m"^2)) +
+  ylab("Kelp Residuals")
+
+
+
+```
+
+### conduct t.tests on site status (Should this be one sided?)
+
+```{r}
+
+#null: no difference of kelp and urchins across reference sites and mpas
+
+#alternative: there is a difference
+
+
+kelp.test <-t.test(log_mac ~ site_status, data = annual_mean)
+
+
+tab_model(kelp.test,
+          string.ci = "Conf. Int (95%)",
+          string.p = "P-value",
+          dv.labels = "log Kelp Density",
+          pred.labels = "Site Status")
+
+
+kelp_bxp <-ggboxplot(annual_mean, x = "site_status", y = "log_mac",
+                     xlab = "Site Status", ylab = expression("log Kelp Density per 60m"^2), 
+                     title = "T Test, t(616.94) = 2.5502, p = 0.7993, n = 658",
+                     bxp.errorbar = T,
+                     alpha = 0.3, 
+                     color = c("blue", "red"))
+
+kelp_bxp
+
+
+urch <- t.test(log_urch ~ site_status , data = annual_mean)
+
+tab_model(urch,
+          string.ci = "Conf. Int (95%)",
+          string.p = "P-value",
+          dv.labels = "log Urchin Density",
+          pred.labels = "Site Status")
+
+
+urch_bxp <-ggboxplot(annual_mean, x = "site_status", y = "log_urch",
+                     xlab = "Site Status", ylab = expression("log Urchin Density per 60m"^2), 
+                     title = "T Test, t(647.41) = -0.19433, p = 0.846, n = 658",
+                     bxp.errorbar = T,
+                     alpha = 0.3, 
+                     color = c("blue", "red"))
+
+urch_bxp
+
+
+
+
+
+```
+
+### create linear model with time incorporated
+
+```{r}
+
+time_lag_mpa <- annual_mean %>% 
+  filter(site_status == "mpa",
+         survey_year >2000)%>%
+  group_by(survey_year) %>% 
+  add_column(time_mpa = "")
+
+time_lag_mpa$time_mpa <- cut(time_lag_mpa$survey_year, 
+                             c(2002:2020), c(1:18))
+
+time_lag_mpa <- time_lag_mpa %>%
+   filter(survey_year > 2002)
+
+
+
+mpa_mod <- lm(log_mac ~ time_mpa, 
+              data = time_lag_mpa)
+
+tab_model(mpa_mod, df.method = "kr",
+          string.ci = "Conf. Int (95%)",
+          string.p = "P-value",
+          pred.labels = c("Intercept", "2 Years", "3 Years", "4 Years", "5 Years", "6 Years",
+                          "7 Years", "8 Years", "9 Years", "10 Years", "11 Years", "12 Years", "13 Years", "14 Years",
+                          "15 Years", "16 Years", "17 Years", "18 Years"),
+          dv.labels = c("MPA: log Kelp Density"))
+
+
+
+
+time_lag_ref <- annual_mean %>% 
+  filter(site_status == "reference",
+         survey_year >2000)%>%
+  group_by(survey_year) %>% 
+  add_column(time_ref = "")
+
+time_lag_ref$time_ref <- cut(time_lag_ref$survey_year, 
+                             c(2002:2020), c(1:18))
+
+time_lag_ref <- time_lag_ref %>%
+   filter(survey_year > 2002)
+
+ref_mod <- lm(log_mac ~ time_ref, 
+              data = time_lag_ref)
+
+tab_model(ref_mod, df.method = "kr",
+          string.ci = "Conf. Int (95%)",
+          string.p = "P-value",
+          pred.labels = c("Intercept", "2 Years", "3 Years", "4 Years", "5 Years", "6 Years",
+                          "7 Years", "8 Years", "9 Years", "10 Years", "12 Years", "13 Years", "14 Years",
+                          "15 Years", "16 Years", "17 Years", "18 Years"),
+          dv.labels = c("Reference Site: log Kelp Density"))
+
+
+
+```
+
+```{r}
+
+# urchins_time <- ggplot(data = time_lag_mpa) +
+#   geom_line(aes(x = survey_year, y = mean_purp), color = "purple") +
+#   theme_classic() +
+#   xlab("Year")+
+#   ylab(expression("Urchin Density per 60m"^2)) +
+#   labs(color = "Site Status")+
+#   geom_vline(xintercept = 2010, linetype = "dashed")+
+#   geom_vline(xintercept = 2013, linetype = "dashed")+
+#   geom_vline(xintercept = 2017, linetype = "dashed")+
+#   scale_y_continuous(expand = c(0.01,0.01)) +
+#   scale_x_continuous(expand = c(0.01,0.01)) +
+#   labs(title = "Time Since Implementation of Marine Protected Areas") +
+#   theme(plot.title = element_text(hjust = 0.5))
+
+
+
+kelp_time_mpa <- ggplot(data = time_lag_mpa) +
+  geom_line(aes(x = survey_year, y = mean_stipe), color = "darkgoldenrod") +
+  theme_classic()+
+  xlab("Year")+
+  ylab(expression("Kelp Density per 60m"^2)) +
+  labs(color = "Site Status") +
+  geom_vline(xintercept = 2018, linetype = "dashed")+
+  geom_vline(xintercept = 2019, linetype = "dashed")+
+  geom_vline(xintercept = 2017, linetype = "dashed") +
+  geom_vline(xintercept = 2020, linetype = "dashed") +
+  scale_alpha_continuous()+
+  scale_y_continuous(expand = c(0.01,0.01)) +
+  scale_x_continuous(expand = c(0.01,0.01)) +
+  labs(title = "Time Since Implementation of Marine Protected Areas", subtitle = "MPA") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+kelp_time_ref <- ggplot(data = time_lag_ref) +
+  geom_line(aes(x = survey_year, y = mean_stipe), 
+            color = "darkgoldenrod", linetype = "dashed") +
+  theme_classic()+
+  xlab("Year")+
+  ylab(expression("Kelp Density per 60m"^2)) +
+  labs(color = "Site Status") +
+  geom_vline(xintercept = 2017, linetype = "dashed")+
+  geom_vline(xintercept = 2018, linetype = "dashed")+
+  geom_vline(xintercept = 2019, linetype = "dashed") +
+  geom_vline(xintercept = 2016, linetype = "dashed") +
+  geom_vline(xintercept = 2014, linetype = "dashed") +
+  scale_y_continuous(expand = c(0.01,0.01)) +
+  scale_x_continuous(expand = c(0.01,0.01)) +
+  labs(subtitle = "Reference")
+
+kelp_time_mpa / kelp_time_ref
+
+
+```
