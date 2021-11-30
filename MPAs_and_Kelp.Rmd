@@ -48,6 +48,7 @@ MPA <- read_sf(here("ds582", "ds582.shp")) %>%
 
 
 
+
 ggplot() +
   scale_x_continuous("Longitude", breaks = c(-120.5, -120.25, -120, -119.75, -119.5, -119.25),
                      expand = c(0,0)) +
@@ -83,7 +84,8 @@ ggplot() +
   labs(caption = "fig 1. Map of the Northern Channel Islands illustrating location of Marine Protected Areas (red)")
 
 
-  
+ggsave(here("Figures", "map.jpeg"))
+
 
 
 ```
@@ -127,7 +129,6 @@ annual_mean <- raw_data %>%
   ungroup()
  
 
-
   
 
 ```
@@ -168,6 +169,7 @@ combined <- urchins / kelp & theme(legend.position = "right")
 combined + plot_layout(guides = "collect")
 
 
+ggsave(here("Figures", "t_series.jpeg"))
 
 
 ```
@@ -191,6 +193,8 @@ tab_model(mod,
           title = "Tbl 1. Linear Model Results for Below Predictors")
 
 
+
+
 annual_mean %>% 
   ggplot(aes(x = den_STRPURAD, y = log_mac, color = site_status)) +
   geom_point(alpha = 0.5, aes(color =site_status)) +
@@ -203,6 +207,8 @@ annual_mean %>%
   labs(color = "Site Status",
        caption = "fig 3. Linear model of Urchin Density, Site Status, and Site Status:Urchin Density as predictors of log Kelp") +
   scale_color_manual(values = c("red", "blue"))
+
+ggsave(here("Figures", "model_1.jpeg"))
 
 
 
@@ -243,6 +249,9 @@ kelp_boxp <- ggboxplot(annual_mean, x = "site_status", y = "log_mac",
                      alpha = 0.3, 
                      color = c("blue", "red"))
 
+ggsave(here("Figures", "kelp_bxp.jpeg"))
+
+
 kelp_boxp
 
 
@@ -263,6 +272,7 @@ urch_bxp <-ggboxplot(annual_mean, x = "site_status", y = "log_urch",
                      alpha = 0.3, 
                      color = c("blue", "red"))
 
+ggsave(here("Figures", "urch_bxp.jpeg"))
 
 
 urch_bxp
@@ -377,6 +387,9 @@ kelp_time_ref <- ggplot(data = time_lag_ref) +
 
 kelp_time_mpa / kelp_time_ref
 
+ggsave(here("Figures", "t_series_2.jpeg"))
+
+
 
 ```
 
@@ -436,12 +449,15 @@ urch_dist <- ggplot(data = annual_mean) +
 
 
 
+
 mac_dist <- ggplot(data = annual_mean) +
   geom_histogram(aes(den_MACSTIPES), binwidth = 15) +
   theme_classic() +
   xlab(expression("Kelp Density per 60m"^2)) 
 
 urch_dist * mac_dist
+
+ggsave(here("Figures", "supp_fig_1.jpeg"))
 
 caption = 
 # Log Transformed Normality 
@@ -460,6 +476,8 @@ log_mac_dist <- ggplot(data = annual_mean) +
 
 log_urch_dist * log_mac_dist
 
+ggsave(here("Figures", "supp_fig_2.jpeg"))
+
 
 
 # Model Fit
@@ -474,9 +492,13 @@ ggplot(data = aug) +
   theme_classic() +
   xlab("Kelp Residuals")
 
+ggsave(here("Figures", "supp_resids.jpeg"))
+
 
 
 qqPlot(aug$residuals_mac) 
+
+ggsave(here("Figures", "qqplot.jpeg"))
 
 
 paste0("mean residuals ", mean(aug$residuals_mac))
@@ -489,6 +511,8 @@ ggplot(data = aug) +
   theme_classic() +
   xlab(expression("Urchin Density per 60m"^2)) +
   ylab("Kelp Residuals")
+
+ggsave(here("Figures", "supp_fig_hetero.jpeg"))
 
 
 
