@@ -90,7 +90,7 @@ ggplot() +
 
 An array work has already been done analyzing the effects of MPA implementation on Kelp Forests (Hamilton & Caselle, 2015, Selden et al. 2017). It is well known that many trophic levels change in abundance whether in an MPA or in a fished area (A Decade of Protection, PISCO). It is also well know that Purple urchins can form "barrens" when densities reach a critical threshold (Ling et al., 2015). There is a tipping point where a phase-shift occurs from a macro-algae dominated system to an urchin barren (Dexter & Scheibling, 2014). The reef will become completely devoid of algae and the dominate space holder will be purple urchins(Ling et al., 2015, Dexter & Scheibling, 2014).
 
-I began conducting sub-tidal surveys for PISCO in 2017 and have developed these questions based on anecdotal evidence. It was always visually evident if the we were surveying in an MPA or reference site based on kelp and urchin densities. MPAs visually had more kelp and less urchins while reference sites visually had less kelp and more urchins.
+I began conducting sub-tidal surveys for PISCO in 2017 and have developed these questions based on anecdotal evidence. It was always visually evident if we were surveying in an MPA or reference site based on kelp and urchin densities. MPAs visually had more kelp and less urchins while reference sites visually had less kelp and more urchins.
 
 In this study I will test my anecdotal questions with PISCO data. I ask the question; Do MPAs increase kelp densities and what invertebrate species inhibit kelp densities? I also take a simplistic approach and address the question; At what point do MPAs and reference sites kelp densities significantly differ following MPA implementation?
 
@@ -102,7 +102,7 @@ Data was collected through annual sub-tidal scuba surveys. 12 benthic transects 
 
 Data was averaged to an annual site mean (n=658, MPA: n=310, Reference: n=348) for purple urchins and kelp stipes (kelp). Understory kelps and red urchins were not included as Giant kelp is the predominant structural species and red urchins are commercially fished.
 
-All analysis was conducted in Rstudio and the code repository is linked (see supporting figures). OLS linear models and whelch two sample t tests ($\alpha$ \< 0.05) were conducted based on previous studies understandings of the affects purple urchins can have on kelp densities when urchin populations are left unchecked. Response variables were log transformed in order to normalize distribution (see supporting figures). The QQplot is not linear and the residuals show potential heteroscedasticity, take model results with a grain salt (see supporting figures). All other tests of model fit did show potential for acceptable model choice.
+All analysis was conducted in Rstudio and the code repository is linked (see supporting figures). OLS linear models and whelch two sample t tests ($\alpha$ \< 0.05) were conducted based on previous studies understandings of affects purple urchins can have on kelp densities when urchin populations are left unchecked. Response variables were log transformed in order to normalize distribution (see supporting figures). The QQplot is not linear and the residuals show potential heteroscedasticity, model results should guide further research (see supporting figures). All other tests of model fit did show potential for acceptable model choice.
 
 ```{r}
 
@@ -125,8 +125,7 @@ annual_mean <- raw_data %>%
   mutate(log_plant = log(den_MACPYRAD)) %>% 
   filter_all(all_vars(!is.infinite(.))) %>% 
   ungroup()
-
-
+ 
 
 
   
@@ -135,7 +134,7 @@ annual_mean <- raw_data %>%
 
 ### Results
 
-Through initial data visualization, trends can be observed for kelp densities and urchin densities inside MPAs and Reference sites (fig 2). It is apparent that urchin densities between MPAs and reference sites fluctuate and follow similar trends until 2014, in which urchin densities inside MPAs show considerably lower densities. A similar trend is observed for kelp densities in which densities fluctuate until 2013 and then began to diverge with higher densities inside the MPAs.
+Through initial data visualization, trends can be observed for kelp densities and urchin densities inside MPAs and reference sites (fig 2). It is apparent that urchin densities between MPAs and reference sites fluctuate and follow similar trends until 2014, in which urchin densities inside MPAs show considerably lower densities. A similar trend is observed for kelp densities in which densities fluctuate until 2013 and then began to diverge with higher densities inside the MPAs.
 
 ```{r}
 
@@ -175,7 +174,7 @@ combined + plot_layout(guides = "collect")
 
 #### Linear Model
 
-To determine what might be causing these differences in kelp densities in the MPAs and reference sites, a linear model was created ($\alpha$ \< 0.05) (Tbl 1, fig 3). Annual site means for urchin densities, site status (MPA or Reference Site), and site status as an interaction with urchin densities, were all used as predictors for log kelp densities in the linear model. The results illustrate that urchin density is a significant predictor for kelp densities (p\<0.001). Interestingly site status is a poor predictor for kelp densities (p=0.845) yet anecdotal observations say otherwise. The urchin density and site status interaction (p=0.095) was not found to be a significant interaction but can still indicate the affects that can occur between the two predictors. A negative trend can clearly be seen between kelp density and urchin densities (fig 3). Overall model predictability is rather low (adjusted $R^{2}$ = 0.154) and not suited for predicting log kelp variability.
+To determine what might be the cause of these differences of kelp densities in the MPAs and reference sites, a linear model was created ($\alpha$ \< 0.05) (Tbl 1, fig 3). Annual site means for urchin densities, site status (MPA or Reference Site), and site status as an interaction with urchin densities, were all used as predictors for log kelp densities in the linear model. The results illustrate that urchin density is a significant predictor for log kelp densities (p\<0.001). Interestingly site status is a poor predictor for log kelp densities (p=0.845) yet anecdotal observations say otherwise. The urchin density and site status interaction (p=0.095) was not found to be a significant interaction but can still indicate the affects that can occur between the two predictors. A negative trend can clearly be seen between log kelp density and urchin densities (fig 3). Overall model predictability is rather low (adjusted $R^{2}$ = 0.154) and not suited for predicting log kelp variability.
 
 ```{r}
 
@@ -217,7 +216,7 @@ The null hypothesis: There is no difference of kelp and urchin densities between
 
 The alternative hypothesis: There is a difference in kelp and urchin densities between MPAs and reference sites for the selected data set.
 
-The first t-test concluded that we would fail to reject the null hypothesis of site status as a predictor for log kelp density (p=0.675) (fig 3 Tbl 2). The second t-test once again concluded that we would fail to reject the null hypothesis of site status as a predictor for log urchin density (p=0.846) (fig 4 Tbl 3). This may not align with my current anecdotal evidence and that is understandable as these t-tests include many data points that counter my current anecdotal evidence (fig 2).
+The first t-test concluded that we would fail to reject the null hypothesis of site status as a predictor for log kelp density (p=0.675) (fig 3 Tbl 2). The second t-test once again concluded that we would fail to reject the null hypothesis of site status as a predictor for log urchin density (p=0.846) (fig 4 Tbl 3). This may not align with my current anecdotal evidence and that is understandable as these t-tests include many data points through time that counter my current anecdotal evidence (fig 2).
 
 ```{r}
 
@@ -383,59 +382,45 @@ kelp_time_mpa / kelp_time_ref
 
 ### Discussion
 
-Understanding the changes that occur from the implementation of MPAs is important so we can know if they are working and benefiting the ecosystem. Through long term monitoring and analysis we can better understand how they evolve through time and this knowledge can be translated across regions and systems for the implementation of new MPAs or reserves.
+Understanding the changes that occur from the implementation of MPAs is important so we can know if they are working and benefiting the ecosystem. Through long term monitoring and analysis we can better understand how they evolve through time and this knowledge can then be translated across regions and systems for the implementation of new MPAs or reserves.
 
-From these results we can see changes in kelp densities from the implementation of MPAs are not explicitly evident (fig 2). Kelp forests are highly dynamic ecosystems and fluctuations caused through environmental changes can lead to challenges in understanding changes through time (fig 2) (Reed et al. 2014). However from our linear models there does seem to be strong evidence of a negative relationship between urchin densities and kelp densities (fig 3 Tbl 1). This significant result ($\alpha$ \< 0.05) does line up with my own anecdotal evidence of survey sites with high urchin densities and low kelp density or vice versa. Interestingly, I did not see any evidence for site status to significantlly affect either kelp or urchin densities (fig 3, 4, 5 Tbl 1,2,3). However, based on the long-run trends of urchin and kelp densities this makes sense why the tests I conducted did not pick up a difference (fig 2). There was a long period of time, many data points, where kelp densities did not significantly differ between MPAs and reference sites (fig 6 Tbl 4,5). The time period at which kelp densities began to significantly differ between MPAs and reference sites coincides with my own anecdotal observations beginning in 2017 (fig 6, Tbl 4,5) as that is when I began conducting surveys.
+From these results we can see changes in kelp densities from the implementation of MPAs are not explicitly evident (fig 2). Kelp forests are highly dynamic ecosystems and fluctuations caused through environmental changes can lead to challenges in understanding changes through time (fig 2) (Reed et al. 2014). However from our linear models there does seem to be strong evidence of a negative relationship between urchin densities and kelp densities (fig 3 Tbl 1). This significant result ($\alpha$ \< 0.05) does line up with my own anecdotal evidence of survey sites with high urchin densities and low kelp density or vice versa. Interestingly, I did not see any evidence for site status to significantlly affect either kelp or urchin densities (fig 3, 4, 5 Tbl 1,2,3). However, based on the long-run trends of urchin and kelp densities this makes sense why the tests I conducted did not pick up a difference (fig 2). There was a long period of time, many data points, where kelp densities did not significantly differ between MPAs and reference sites (fig 6 Tbl 4,5). The time period at which kelp densities began to significantly differ between MPAs and reference sites coincides with my own anecdotal observations beginning in 2017 (fig 6, Tbl 4,5) as that is when I began conducting surveys for PISCO.
 
-Now the real question lies with in, what happened in the year 2013-2014 at the N. Channel Islands that caused such sudden changes in kelp and urchin densities inside MPAs and reference sites (fig 2)? Further research needs to be conducted but evidence supports that the mass sea star war wasting event the proliferated from Baja to Alaska affected kelp densities (Eisaguirre et al., 2020). The sunflower star (Pycnopodia helianthordes), a keystone species, consumes urchins but was functionally extirpated from the N. Channel Islands by 2014 due to sea star wasting disease (Eisaguirre et al., 2020, Hewson et al., 2018, Moitoza & Philips, 1979) . A change as abrupt and sudden as the loss of a keystone species can cause shifts in any ecosystem. Especially if a site, IE reference site, is heavily commercially and recreationally fished, decreasing the remaining urchin predator guild, leading to an explosion of urchins and a dramatic loss of kelp (Eisaguirre et al., 2020). However if a site is protected, the release of fishing pressure can lead to increased resilience in the system due to the remaining urchin predator guild mediating urchin levels thus allowing for kelp's to persist (Eisaguirre et al., 2020).
+With the supporting figures showing mixed results of support for model choice, it is important to point out that random sampling was conducted, residual mean is near zero, and error terms are normally distributed. However there is heteroscedasticity and the qqplot is not linear.
+
+Now the real question lies with in, what happened in the year 2013-2014 at the N. Channel Islands that caused such sudden changes in kelp and urchin densities inside MPAs and reference sites (fig 2)? Further research needs to be conducted but evidence supports that the mass sea star war wasting event that proliferated from Baja to Alaska affected kelp densities (Eisaguirre et al., 2020). The sunflower star (Pycnopodia helianthordes), a keystone species, consumes urchins but was functionally extirpated from the N. Channel Islands by 2014 due to sea star wasting disease (Eisaguirre et al., 2020, Hewson et al., 2018, Moitoza & Philips, 1979) . A change as abrupt and sudden as the loss of a keystone species can cause shifts in any ecosystem. Especially if a site (IE reference site) is heavily fished, thus decreasing the remaining urchin predator guild, and ultimately leading to an explosion of urchins with a dramatic loss of kelp (Eisaguirre et al., 2020). However if a site is protected, the release of fishing pressure can lead to increased resilience in the system due to the remaining urchin predator guild mediating urchin levels and allowing for kelp's to persist (Eisaguirre et al., 2020).
 
 ### Conclusion
 
-Further research needs to be conducted, however this study lends support to the importance of maintaining urchin populations in order for healthy kelp forests to persist. Along with the the idea that kelps in marine protected areas could possibly withstand a greater degree of perturbations supporting the already hypothesized theory that MPAs increase ecosystem resilience.
+Further research needs to be conducted, however this study lends support to the importance of maintaining urchin populations in order for healthy kelp forests to persist. Along with the idea that kelps in marine protected areas could possibly withstand a greater degree of perturbations supporting the already hypothesized theory that MPAs increase ecosystem resilience.
 
 ### References
 
 -   Channel Keeper. "About the Santa Barbara Channel." About the Santa Barbara Channel, November 27, 2021. <https://www.sbck.org/about-us/about-the-santa-barbara-channel/>.
 
--   Eisaguirre, Jacob H., Joseph M.Eisaguirre, Kathryn Davis, Peter M. Carlson, Steven D. Gaines, and Jennifer E. Caselle. "Trophic Redundancy and Predator Size Class Structure Drive
-    Differences in Kelp Forest Ecosystem Dynamics." *Ecology* 101, no. 5
-    (2020): e02993. <https://doi.org/10.1002/ecy.2993>.
+-   Eisaguirre, Jacob H., Joseph M.Eisaguirre, Kathryn Davis, Peter M. Carlson, Steven D. Gaines, and Jennifer E. Caselle. "Trophic Redundancy and Predator Size Class Structure Drive Differences in Kelp Forest Ecosystem Dynamics." *Ecology* 101, no. 5 (2020): e02993. <https://doi.org/10.1002/ecy.2993>.
 
 -   Filbee-Dexter, K, and Re Scheibling. "Sea Urchin Barrens as Alternative Stable States of Collapsed Kelp Ecosystems." *Marine Ecology Progress Series* 495 (January 9, 2014): 1--25. <https://doi.org/10.3354/meps10573>.
 
--   Hamilton, Scott L., and Jennifer E. Caselle. "Exploitation and Recovery of a Sea Urchin Predator Has Implications for the Resilience of Southern California Kelp Forests." *Proceedings of the
-    Royal Society B: Biological Sciences* 282, no. 1799 (January 22, 2015): 20141817. <https://doi.org/10.1098/rspb.2014.1817>.
+-   Hamilton, Scott L., and Jennifer E. Caselle. "Exploitation and Recovery of a Sea Urchin Predator Has Implications for the Resilience of Southern California Kelp Forests." *Proceedings of the Royal Society B: Biological Sciences* 282, no. 1799 (January 22, 2015): 20141817. <https://doi.org/10.1098/rspb.2014.1817>.
 
--   Hewson, Ian, Kalia S. I. Bistolas, Eva M. Quijano Cardé, Jason B. Button, Parker J. Foster, Jacob M. Flanzenbaum, Jan Kocian, and Chaunte K. Lewis. "Investigating the Complex Association
-    Between Viral Ecology, Environment, and Northeast Pacific Sea Star Wasting." *Frontiers
-    in Marine Science* 5 (2018): 77. <https://doi.org/10.3389/fmars.2018.00077>.
+-   Hewson, Ian, Kalia S. I. Bistolas, Eva M. Quijano Cardé, Jason B. Button, Parker J. Foster, Jacob M. Flanzenbaum, Jan Kocian, and Chaunte K. Lewis. "Investigating the Complex Association Between Viral Ecology, Environment, and Northeast Pacific Sea Star Wasting." *Frontiers in Marine Science* 5 (2018): 77. <https://doi.org/10.3389/fmars.2018.00077>.
 
--   Ling, S. D., R. E. Scheibling, A. Rassweiler, C. R. Johnson, N. Shears, S. D. Connell, A. K. Salomon, et al.
-    "Global Regime Shift Dynamics of Catastrophic Sea Urchin Overgrazing." *Philosophical
-    Transactions of the Royal Society B: Biological Sciences* 370, no. 1659
-    (January 5, 2015): 20130269. <https://doi.org/10.1098/rstb.2013.0269>.
+-   Ling, S. D., R. E. Scheibling, A. Rassweiler, C. R. Johnson, N. Shears, S. D. Connell, A. K. Salomon, et al. "Global Regime Shift Dynamics of Catastrophic Sea Urchin Overgrazing." *Philosophical Transactions of the Royal Society B: Biological Sciences* 370, no. 1659 (January 5, 2015): 20130269. <https://doi.org/10.1098/rstb.2013.0269>.
 
--   Moitoza, D. J., and D. W. Phillips. "Prey Defense, Predator Preference, and Nonrandom Diet: The Interactions between Pycnopodia Helianthoides and Two Species of Sea Urchins." *Marine
-    Biology* 53, no. 4 (August 1, 1979): 299--304. <https://doi.org/10.1007/BF00391611>.
+-   Moitoza, D. J., and D. W. Phillips. "Prey Defense, Predator Preference, and Nonrandom Diet: The Interactions between Pycnopodia Helianthoides and Two Species of Sea Urchins." *Marine Biology* 53, no. 4 (August 1, 1979): 299--304. <https://doi.org/10.1007/BF00391611>.
 
--   "Prey Defense, Predator Preference, and Nonrandom Diet: The Interactions between Pycnopodia
-    Helianthoides and Two Species of Sea Urchins." *Marine Biology* 53, no. 4
-    (August 1, 1979): 299--304. <https://doi.org/10.1007/BF00391611>.
+-   "Prey Defense, Predator Preference, and Nonrandom Diet: The Interactions between Pycnopodia Helianthoides and Two Species of Sea Urchins." *Marine Biology* 53, no. 4 (August 1, 1979): 299--304. <https://doi.org/10.1007/BF00391611>.
 
--   Reed, Daniel C., Andrew R. Rassweiler, Robert J. Miller, Henry M. Page, Sally J. Holbrook, Daniel C. Reed, Andrew R. Rassweiler, Robert J. Miller, Henry M. Page, and Sally J. Holbrook.
-    "The Value of a Broad Temporal and Spatial Perspective in Understanding
-    Dynamics of Kelp Forest Ecosystems." *Marine and Freshwater Research* 67,
-    no. 1 (July 6, 2015): 14--24. <https://doi.org/10.1071/MF14158>.
+-   Reed, Daniel C., Andrew R. Rassweiler, Robert J. Miller, Henry M. Page, Sally J. Holbrook, Daniel C. Reed, Andrew R. Rassweiler, Robert J. Miller, Henry M. Page, and Sally J. Holbrook. "The Value of a Broad Temporal and Spatial Perspective in Understanding Dynamics of Kelp Forest Ecosystems." *Marine and Freshwater Research* 67, no. 1 (July 6, 2015): 14--24. <https://doi.org/10.1071/MF14158>.
 
--   Selden, Rebecca L., Steven D. Gaines, Scott L. Hamilton, and Robert R. Warner. "Protection of Large Predators in a Marine Reserve Alters Size-Dependent Prey Mortality." *Proceedings of
-    the Royal Society B: Biological Sciences* 284, no. 1847 (January 25, 2017): 20161936. <https://doi.org/10.1098/rspb.2016.1936>.
+-   Selden, Rebecca L., Steven D. Gaines, Scott L. Hamilton, and Robert R. Warner. "Protection of Large Predators in a Marine Reserve Alters Size-Dependent Prey Mortality." *Proceedings of the Royal Society B: Biological Sciences* 284, no. 1847 (January 25, 2017): 20161936. <https://doi.org/10.1098/rspb.2016.1936>.
 
--    "Marine Protected Areas - Channel Islands National Park (U.S. National Park Service)." National
-    Park Service. Accessed November 27, 2021. <https://www.nps.gov/chis/learn/nature/marine-protected-areas.htm>.
+-   "Marine Protected Areas - Channel Islands National Park (U.S. National Park Service)." National Park Service. Accessed November 27, 2021. <https://www.nps.gov/chis/learn/nature/marine-protected-areas.htm>.
 
  
 
-###           
+### 
 
 ### Supporting Figures
 
