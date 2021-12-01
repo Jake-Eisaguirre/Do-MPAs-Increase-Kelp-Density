@@ -2,11 +2,8 @@
 title: "Do MPAs Increase Kelp Densities?"
 author: "Jake Eisaguirre"
 date: "12/2/2021"
-output: 
-  html_document:
-    toc: true 
-    toc_float: true
-    code_folding: hide
+output:
+  html_document
 ---
 
 ```{r setup, include=FALSE, collapse=TRUE}
@@ -24,15 +21,16 @@ library(sf)
 library(sp)
 library(ggsn)
 library(plotrix)
+library(html2latex)
+
 ```
 
 ### Introduction
 
 The Northern Channel Islands are situated in the Southern California Bight 22 miles from Santa Barbara California. They are known to be a biodiversity hotpot due to unique environmental factors driving local ecological processes (Santa Barbara ChannelKeeper). In 2003 the state of California, along with NOAA, created 10 Marine protected areas (MPAs) and designated the Channel islands a marine sanctuary. The creation of no-take MPAs allowed for a release of commercial and recreational fishing pressures (National Park Service). Just Prior to the creation of the MPAs, the Partnership for Interdisciplinary Studies of Coastal Oceans (PISCO), began conducting sub-tidal kelp forest surveys inside a suite of MPAs and reference sites in order to gain a better understanding how the release of fishing pressure might alter ecological interactions.
 
-##### Northern Channel Islands Map
 
-```{r}
+```{r echo=FALSE}
 
 cha <- read_sf(here("shape", "channel_islands.shp")) %>% 
   mutate(geometry = st_transform(geometry, "+proj=longlat +ellps=WGS84 +datum=WGS84")) %>% 
@@ -106,7 +104,7 @@ Data was averaged to an annual site mean (n=658, MPA: n=310, Reference: n=348) f
 
 All analysis was conducted in Rstudio and the code repository is linked (see supporting figures). OLS linear models and whelch two sample t tests ($\alpha$ \< 0.05) were conducted based on previous studies understandings of affects purple urchins can have on kelp densities when urchin populations are left unchecked. Response variables were log transformed in order to normalize distribution (see supporting figures). The QQplot is not linear and the residuals show potential heteroscedasticity, model results should guide further research (see supporting figures). All other tests of model fit did show potential for acceptable model choice.
 
-```{r}
+```{r echo=FALSE}
 
 raw_data <- read_csv(here("MLPA_swath_site_means.csv"))
 
@@ -137,7 +135,7 @@ annual_mean <- raw_data %>%
 
 Through initial data visualization, trends can be observed for kelp densities and urchin densities inside MPAs and reference sites (fig 2). It is apparent that urchin densities between MPAs and reference sites fluctuate and follow similar trends until 2014, in which urchin densities inside MPAs show considerably lower densities. A similar trend is observed for kelp densities in which densities fluctuate until 2013 and then began to diverge with higher densities inside the MPAs.
 
-```{r}
+```{r echo=FALSE}
 
 urchins <- ggplot(data = annual_mean) +
   geom_line(aes(x = survey_year, y = mean_purp, color = site_status)) +
@@ -178,7 +176,7 @@ ggsave(here("Figures", "t_series.jpeg"))
 
 To determine what might be the cause of these differences of kelp densities in the MPAs and reference sites, a linear model was created ($\alpha$ \< 0.05) (Tbl 1, fig 3). Annual site means for urchin densities, site status (MPA or Reference Site), and site status as an interaction with urchin densities, were all used as predictors for log kelp densities in the linear model. The results illustrate that urchin density is a significant predictor for log kelp densities (p\<0.001). Interestingly site status is a poor predictor for log kelp densities (p=0.845) yet anecdotal observations say otherwise. The urchin density and site status interaction (p=0.095) was not found to be a significant interaction but can still indicate the affects that can occur between the two predictors. A negative trend can clearly be seen between log kelp density and urchin densities (fig 3). Overall model predictability is rather low (adjusted $R^{2}$ = 0.154) and not suited for predicting log kelp variability.
 
-```{r}
+```{r echo=FALSE, results='asis'}
 
 
 mod <- lm(log_mac ~ den_STRPURAD + site_status + site_status:den_STRPURAD, 
@@ -190,9 +188,8 @@ tab_model(mod,
           dv.labels = c("log Kelp Density"),
           string.ci = "Conf. Int (95%)",
           string.p = "P-value",
-          title = "Tbl 1. Linear Model Results for Below Predictors")
-
-
+          title = "Tbl 1. Linear Model Results for Below Predictors",
+          file = "tbl_1.html")
 
 
 annual_mean %>% 
@@ -224,7 +221,7 @@ The alternative hypothesis: There is a difference in kelp and urchin densities b
 
 The first t-test concluded that we would fail to reject the null hypothesis of site status as a predictor for log kelp density (p=0.675) (fig 3 Tbl 2). The second t-test once again concluded that we would fail to reject the null hypothesis of site status as a predictor for log urchin density (p=0.846) (fig 4 Tbl 3). This may not align with my current anecdotal evidence and that is understandable as these t-tests include many data points through time that counter my current anecdotal evidence (fig 2).
 
-```{r}
+```{r echo=FALSE}
 
 #null: no difference of kelp and urchins across reference sites and mpas
 
@@ -239,7 +236,8 @@ tab_model(kelp.test,
           string.p = "P-value",
           dv.labels = c("log Kelp Density"),
           pred.labels = "Site Status",
-          title = "Tbl 2. log Kelp Welch Two Sample t-test")
+          title = "Tbl 2. log Kelp Welch Two Sample t-test",
+          file = "tbl_2.html")
 
 
 kelp_boxp <- ggboxplot(annual_mean, x = "site_status", y = "log_mac",
@@ -262,7 +260,8 @@ tab_model(urch,
           string.p = "P-value",
           dv.labels = "log Urchin Density",
           pred.labels = "Site Status",
-          title = "Tbl 3. log Urchin Welch Two Sample t-test")
+          title = "Tbl 3. log Urchin Welch Two Sample t-test",
+          file = "tbl_3.html")
 
 
 urch_bxp <-ggboxplot(annual_mean, x = "site_status", y = "log_urch",
@@ -289,7 +288,7 @@ In order to test the affects of time since MPA implementation on kelp densities 
 
 A similar trend occurred for the reference sites. A significant difference in kelp densities since the implementation of MPAs occurred 12, 14-17 (p=0.001, \<0.001, \<0.001, 0.002, \<0.001) years after implementation or 2014, 2016, 2017-2019.
 
-```{r}
+```{r echo=FALSE}
 
 time_lag_mpa <- annual_mean %>% 
   filter(site_status == "mpa",
@@ -315,7 +314,8 @@ tab_model(mpa_mod, df.method = "kr",
                           "7 Years", "8 Years", "9 Years", "10 Years", "11 Years", "12 Years", "13 Years", "14 Years",
                           "15 Years", "16 Years", "17 Years", "18 Years"),
           dv.labels = c("log Kelp Density"),
-          title = "Tbl 4 Linear model fit for change in MPA kelp density since implementation")
+          title = "Tbl 4 Linear model fit for change in MPA kelp density since implementation",
+          file = "tbl_4.html")
 
 
 
@@ -341,14 +341,15 @@ tab_model(ref_mod, df.method = "kr",
           pred.labels = c("Intercept", "2 Years", "3 Years", "4 Years", "5 Years", "6 Years",
                           "7 Years", "8 Years", "9 Years", "10 Years", "12 Years", "13 Years", "14 Years",
                           "15 Years", "16 Years", "17 Years", "18 Years"),
-          dv.labels = c("Reference Site: log Kelp Density"),
-          title = "Tbl 5. Linear model fit for change in reference site kelp density since implementation")
+          dv.labels = c("log Kelp Density"),
+          title = "Tbl 5. Linear model fit for change in reference site kelp density since implementation",
+          file = "tbl_5.html")
 
 
 
 ```
 
-```{r}
+```{r echo=FALSE}
 
 
 kelp_time_mpa <- ggplot(data = time_lag_mpa) +
@@ -433,13 +434,13 @@ Further research needs to be conducted, however this study lends support to the 
 
  
 
-### 
+### GitHub Repository: <https://github.com/Jake-Eisaguirre/Final_Project>
 
 ### Supporting Figures
 
-#### GitHub Repository: <https://github.com/Jake-Eisaguirre/Final_Project>
 
-```{r}
+
+```{r echo=FALSE}
 # Not normally distributed
 urch_dist <- ggplot(data = annual_mean) +
   geom_histogram(aes(den_STRPURAD), binwidth = 70) +
