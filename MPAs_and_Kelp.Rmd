@@ -189,7 +189,8 @@ tab_model(mod,
           string.ci = "Conf. Int (95%)",
           string.p = "P-value",
           title = "Tbl 1. Linear Model Results for Below Predictors",
-          file = "tbl_1.html")
+          file = "tbl_1.html",
+          digits = 4)
 
 
 annual_mean %>% 
